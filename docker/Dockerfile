@@ -30,16 +30,33 @@ RUN set -eux; \
     cd seL4; \
     git checkout 0260fba168b74dd2504c9447f2fa8da1161ead87;
 
+COPY kernel-settings.cmake .
+RUN apt-get update -q && apt-get install -y --no-install-recommends gcc-riscv64-linux-gnu && rm -rf /var/lib/apt/lists/*
+    
+# RUN set -eux; \
+#     cd seL4; \
+#     cmake \
+#         -DCROSS_COMPILER_PREFIX=aarch64-linux-gnu- \
+#         -DCMAKE_INSTALL_PREFIX=$SEL4_INSTALL_DIR \
+#         -DKernelPlatform=qemu-arm-virt \
+#         # TODO further develop kernel loader to make KernelArmHypervisorSupport=ON unecessary
+#         -DKernelArmHypervisorSupport=ON \
+#         -DKernelVerificationBuild=OFF \
+#         -DARM_CPU=cortex-a57 \
+#         -G Ninja \
+#         -S . \
+#         -B build; \
+#     ninja -C build all; \
+#     ninja -C build install; \
+#     rm -rf $(pwd);
+
 RUN set -eux; \
     cd seL4; \
     cmake \
-        -DCROSS_COMPILER_PREFIX=aarch64-linux-gnu- \
+        -DCROSS_COMPILER_PREFIX=riscv64-linux-gnu- \
         -DCMAKE_INSTALL_PREFIX=$SEL4_INSTALL_DIR \
-        -DKernelPlatform=qemu-arm-virt \
-        # TODO further develop kernel loader to make KernelArmHypervisorSupport=ON unecessary
-        -DKernelArmHypervisorSupport=ON \
-        -DKernelVerificationBuild=OFF \
-        -DARM_CPU=cortex-a57 \
+        -DKernelPlatform=spike \
+        -C ../kernel-settings.cmake \
         -G Ninja \
         -S . \
         -B build; \
@@ -47,16 +64,31 @@ RUN set -eux; \
     ninja -C build install; \
     rm -rf $(pwd);
 
+# RUN set -eux; \
+#     url="https://github.com/seL4/rust-sel4"; \
+#     rev="a20aab14c0533d3145a2db75020e60151ce9b78f"; \
+#     common_args="--git $url --rev $rev --root $SEL4_INSTALL_DIR"; \
+#     CC_aarch64_unknown_none=aarch64-linux-gnu-gcc \
+#     SEL4_PREFIX=$SEL4_INSTALL_DIR \
+#         cargo install \
+#             -Z build-std=core,compiler_builtins \
+#             -Z build-std-features=compiler-builtins-mem \
+#             --target aarch64-unknown-none \
+#             $common_args \
+#             sel4-kernel-loader; \
+#     cargo install \
+#         $common_args \
+#         sel4-kernel-loader-add-payload;
 RUN set -eux; \
     url="https://github.com/seL4/rust-sel4"; \
     rev="a20aab14c0533d3145a2db75020e60151ce9b78f"; \
     common_args="--git $url --rev $rev --root $SEL4_INSTALL_DIR"; \
-    CC_aarch64_unknown_none=aarch64-linux-gnu-gcc \
+    CC=riscv64-linux-gnu-gcc \
     SEL4_PREFIX=$SEL4_INSTALL_DIR \
         cargo install \
             -Z build-std=core,compiler_builtins \
             -Z build-std-features=compiler-builtins-mem \
-            --target aarch64-unknown-none \
+            --target riscv64imac-unknown-none-elf \
             $common_args \
             sel4-kernel-loader; \
     cargo install \

@@ -33,6 +33,15 @@ $(app): $(app).intermediate
 # SEL4_TARGET_PREFIX is used by build.rs scripts of various rust-sel4 crates to locate seL4
 # configuration and libsel4 headers.
 .INTERMDIATE: $(app).intermediate
+# $(app).intermediate:
+# 	SEL4_PREFIX=$(sel4_prefix) \
+# 		cargo build \
+# 			-Z build-std=core,alloc,compiler_builtins \
+# 			-Z build-std-features=compiler-builtins-mem \
+# 			--target-dir $(build_dir)/target \
+# 			--out-dir $(build_dir) \
+# 			--target aarch64-sel4 \
+# 			-p $(app_crate)
 $(app).intermediate:
 	SEL4_PREFIX=$(sel4_prefix) \
 		cargo build \
@@ -40,7 +49,7 @@ $(app).intermediate:
 			-Z build-std-features=compiler-builtins-mem \
 			--target-dir $(build_dir)/target \
 			--out-dir $(build_dir) \
-			--target aarch64-sel4 \
+			--target riscv64imac-sel4 \
 			-p $(app_crate)
 
 image := $(build_dir)/image.elf
@@ -53,12 +62,19 @@ $(image): $(app) $(loader) $(loader_cli)
 		--app $(app) \
 		-o $@
 
+# qemu_cmd := \
+# 	qemu-system-aarch64 \
+# 		-machine virt,virtualization=on -cpu cortex-a57 -m size=1G \
+# 		-serial mon:stdio \
+# 		-nographic \
+# 		-kernel $(image)
 qemu_cmd := \
-	qemu-system-aarch64 \
-		-machine virt,virtualization=on -cpu cortex-a57 -m size=1G \
+	qemu-system-riscv64 \
+		-machine virt -m size=4G \
 		-serial mon:stdio \
 		-nographic \
-		-kernel $(image)
+		-kernel $(image) \
+		-D qemu.log -d in_asm,int,pcall,cpu_reset,guest_errors
 
 .PHONY: run
 run: $(image)

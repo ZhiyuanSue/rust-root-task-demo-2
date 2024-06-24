@@ -24,8 +24,12 @@ build:
 
 .PHONY: run
 run: build
+#	docker run -d --name $(container_name) \
+#		--mount type=bind,src=$(abspath $(work_root)),dst=/work \
+#		$(image_tag) sleep inf
+#   add :z for security linux like fedora.
 	docker run -d --name $(container_name) \
-		--mount type=bind,src=$(abspath $(work_root)),dst=/work \
+		-v "$(abspath $(work_root)):/work:z" \
 		$(image_tag) sleep inf
 
 .PHONY: exec
