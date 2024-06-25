@@ -6,4 +6,8 @@
 
 /build/
 /target/
+/opt/
+/crates-ldh/
+/.vscode/
 qemu.log
+1.log

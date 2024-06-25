@@ -95,6 +95,44 @@ RUN set -eux; \
         $common_args \
         sel4-kernel-loader-add-payload;
 
+COPY lib_patch.patch .
+
+# Clone rel4 kernel
+RUN set -eux; \
+        git clone \
+            https://github.com/rel4team/rel4_kernel.git \
+            --config advice.detachedHead=false; \
+        cd rel4_kernel; \
+        git checkout cf2cbf43ff6bbebd2a4390ec1ca9c1fa98085ba9; \
+        git apply ../lib_patch.patch;
+RUN set -eux; \
+        git clone \
+            https://github.com/rel4team/seL4_c_impl.git \
+            --config advice.detachedHead=false; \
+        cd seL4_c_impl; \
+        git checkout 552f173d3d7780b33184ebedefc58329ea5de3ba;
+
+RUN set -eux; \
+    cd rel4_kernel;\
+    rustup target add riscv64imac-unknown-none-elf; \
+    make run;\
+    cd ../seL4_c_impl; \
+    cmake \
+        -DCROSS_COMPILER_PREFIX=riscv64-linux-gnu- \
+        -DCMAKE_INSTALL_PREFIX=/opt/reL4 \
+        -DKernelPlatform=spike \
+        -C ../kernel-settings.cmake \
+        -G Ninja \
+        -S . \
+        -B build; \
+    ninja -C build all; \
+    ninja -C build install; \
+    rm -rf $(pwd);
+
+RUN cp /opt/seL4/libsel4/include/interfaces/*.xml /opt/reL4/libsel4/include/interfaces/
+RUN cp /opt/seL4/bin/sel4-kernel-loader /opt/reL4/bin/
+RUN cp /opt/seL4/bin/sel4-kernel-loader-add-payload /opt/reL4/bin/
+
 ARG UID
 ARG GID
 
@@ -126,5 +164,9 @@ RUN set -eux; \
     fi;
 
 ENV PATH=/home/x/.cargo/bin:$PATH
+
+RUN rustup toolchain install nightly-2024-05-01-x86_64-unknown-linux-gnu
+RUN rustup component add llvm-tools rust-src rustc-dev
+RUN rustup target add riscv64imac-unknown-none-elf
 
 WORKDIR /work

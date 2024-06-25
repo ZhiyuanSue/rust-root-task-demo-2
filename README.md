@@ -35,3 +35,11 @@ in Rust:
 ```
 make run
 ```
+
+If you want to run on rel4:
+
+```
+make OS=rel4 run
+```
+
+Clear the build folder if you not run the specific kernel successfully.
