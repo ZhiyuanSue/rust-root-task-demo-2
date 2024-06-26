@@ -13,7 +13,7 @@ use virtio_drivers::device::net::{RxBuffer, TxBuffer, VirtIONet};
 use virtio_drivers::transport::mmio::{MmioTransport, VirtIOHeader};
 use sel4::BootInfo;
 use sel4::cap_type::{Untyped, MegaPage};
-use sel4::{FrameSize, ObjectBlueprint, ObjectBlueprintArch, VmAttributes, CapRights};
+use sel4::{FrameObjectType, ObjectBlueprint, ObjectBlueprintArch, VmAttributes, CapRights};
 use sel4_logging::log::debug;
 use sel4_root_task::debug_println;
 use crate::image_utils::UserImageUtils;
@@ -168,13 +168,13 @@ fn init_mmio(boot_info: &BootInfo) {
         }
     }
     let virtio_untyped_slot = obj_allocator.lock().get_empty_slot();
-    let retype_bits = virtio_untyped_bits - FrameSize::MEGA_BITS;
+    let retype_bits = virtio_untyped_bits - FrameObjectType::MEGA_PAGE_BITS;
     let retype_num = (1 << retype_bits) / 4;
     let bluprint = ObjectBlueprint::Untyped {
-        size_bits: FrameSize::MEGA_BITS
+        size_bits: FrameObjectType::MEGA_PAGE_BITS
     };
 
-    let cnode = BootInfo::init_thread_cnode();
+    let cnode = init_thread::slot::CNODE.cap();
 
     virtio_untyped.untyped_retype(
         &bluprint,
@@ -203,7 +203,7 @@ fn init_mmio(boot_info: &BootInfo) {
         let _ = obj_allocator.lock().get_empty_slot();
         let virtio_frame = BootInfo::init_cspace_local_cptr::<MegaPage>(virtio_frame_slot + i);
         let paddr = virtio_frame.frame_get_address().unwrap();
-        if paddr <=NET_DEVICE_ADDR && paddr + (1 << FrameSize::MEGA_BITS) > NET_DEVICE_ADDR {
+        if paddr <=NET_DEVICE_ADDR && paddr + (1 << FrameObjectType::MEGA_PAGE_BITS) > NET_DEVICE_ADDR {
             debug_println!("virtio_frame paddr: {:#x}", paddr);
             let vaddr = paddr;
             // let l2_page_table = obj_allocator.lock().alloc_page_table().unwrap();

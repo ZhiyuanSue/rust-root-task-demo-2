@@ -28,7 +28,7 @@ impl UserImageUtils {
         let num_user_frames = bootinfo.user_image_frames().len();
         assert_eq!(user_image_footprint.len(), num_user_frames * GRANULE_SIZE);
         let ix = (vaddr - user_image_footprint.start) / GRANULE_SIZE;
-        bootinfo.user_image_frames().start + ix
+        bootinfo.user_image_frames().start() + ix
     }
 
     pub fn get_user_image_frame_paddr(&self, vaddr: usize) -> usize {

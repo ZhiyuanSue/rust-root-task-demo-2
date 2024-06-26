@@ -53,7 +53,7 @@ pub fn async_syscall_test(bootinfo: &sel4::BootInfo) -> sel4::Result<!> {
     let cid = coroutine_spawn(Box::pin(recv_reply_coroutine_async_syscall(new_buffer_ptr, REPLY_NUM)));
     debug_println!("async_syscall_test: cid: {:?}", cid);
     let badge = register_recv_cid(&cid).unwrap() as u64;
-    let cnode = sel4::BootInfo::init_thread_cnode();
+    let cnode = sel4::init_thread::slot::CNODE.cap();
     cnode.relative(badged_reply_ntfn).mint(
         &cnode.relative(unbadged_reply_ntfn),
         sel4::CapRights::write_only(),

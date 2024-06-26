@@ -75,7 +75,7 @@ impl AsyncMemoryAllocator {
         let obj_allocator = unsafe {
             &GLOBAL_OBJ_ALLOCATOR
         };
-        let cnode = sel4::BootInfo::init_thread_cnode();
+        let cnode = sel4::init_thread::slot::CNODE.cap();
         let dst = cnode.relative_self();
         // 分配页框
         for i in 0..MAX_PAGE_NUM {

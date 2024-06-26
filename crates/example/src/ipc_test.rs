@@ -51,7 +51,7 @@ pub fn async_helper_thread(arg: usize, ipc_buffer_addr: usize) {
         GLOBAL_OBJ_ALLOCATOR.lock().get_empty_slot(),
     );
 
-    let cnode = sel4::BootInfo::init_thread_cnode();
+    let cnode = sel4::init_thread::slot::CNODE.cap();
     cnode.relative(badged_reply_notification).mint(
         &cnode.relative(reply_ntfn),
         sel4::CapRights::write_only(),
@@ -157,7 +157,7 @@ pub fn async_ipc_test(_bootinfo: &sel4::BootInfo) -> sel4::Result<!>  {
     let cid = coroutine_spawn_with_prio(Box::pin(recv_req_coroutine(async_args.get_ptr())), 1);
     debug_println!("[server] cid: {:?}, exec_ptr: {:#x}", cid, get_executor_ptr());
     let badge = register_recv_cid(&cid).unwrap() as u64;
-    let cnode = sel4::BootInfo::init_thread_cnode();
+    let cnode = sel4::init_thread::slot::CNODE.cap();
     cnode.relative(badged_notification).mint(
         &cnode.relative(unbadged_notification),
         sel4::CapRights::write_only(),

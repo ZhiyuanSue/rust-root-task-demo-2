@@ -97,7 +97,7 @@ impl ObjectAllocator {
         let blueprint = sel4::ObjectBlueprint::Notification;
         let untyped = self.get_the_first_untyped_slot(&blueprint);
         let slot = self.empty.next().unwrap();
-        let cnode = sel4::BootInfo::init_thread_cnode();
+        let cnode = sel4::init_thread::slot::CNODE.cap();
         untyped.untyped_retype(
             &blueprint,
             &cnode.relative_self(),
@@ -113,7 +113,7 @@ impl ObjectAllocator {
         let blueprint = sel4::ObjectBlueprint::Endpoint;
         let untyped = self.get_the_first_untyped_slot(&blueprint);
         let slot = self.empty.next().unwrap();
-        let cnode = sel4::BootInfo::init_thread_cnode();
+        let cnode = sel4::init_thread::slot::CNODE.cap();
         untyped.untyped_retype(
             &blueprint,
             &cnode.relative_self(),
@@ -137,7 +137,7 @@ impl ObjectAllocator {
         for _ in 1..cnt {
             self.empty.next().unwrap();
         }
-        let cnode = sel4::BootInfo::init_thread_cnode();
+        let cnode = sel4::init_thread::slot::CNODE.cap();
         let ep_blueprint = sel4::ObjectBlueprint::Endpoint;
         untyped.untyped_retype(
             &ep_blueprint,
@@ -155,7 +155,7 @@ impl ObjectAllocator {
         let blueprint = sel4::ObjectBlueprint::Arch(ObjectBlueprintArch::_4kPage);
         let untyped = self.get_the_first_untyped_slot(&blueprint);
         let slot = self.empty.next().unwrap();
-        let cnode = sel4::BootInfo::init_thread_cnode();
+        let cnode = sel4::init_thread::slot::CNODE.cap();
         untyped.untyped_retype(
             &blueprint,
             &cnode.relative_self(),
@@ -179,7 +179,7 @@ impl ObjectAllocator {
         for _ in 1..cnt {
             self.empty.next().unwrap();
         }
-        let cnode = sel4::BootInfo::init_thread_cnode();
+        let cnode = sel4::init_thread::slot::CNODE.cap();
         let frame_blueprint = sel4::ObjectBlueprint::Arch(ObjectBlueprintArch::_4kPage);
         untyped.untyped_retype(
             &frame_blueprint,
@@ -197,7 +197,7 @@ impl ObjectAllocator {
         let blueprint = sel4::ObjectBlueprint::Tcb;
         let untyped = self.get_the_first_untyped_slot(&blueprint);
         let slot = self.empty.next().unwrap();
-        let cnode = sel4::BootInfo::init_thread_cnode();
+        let cnode = sel4::init_thread::slot::CNODE.cap();
         untyped.untyped_retype(
             &blueprint,
             &cnode.relative_self(),
@@ -221,7 +221,7 @@ impl ObjectAllocator {
         for _ in 1..cnt {
             self.empty.next().unwrap();
         }
-        let cnode = sel4::BootInfo::init_thread_cnode();
+        let cnode = sel4::init_thread::slot::CNODE.cap();
         let tcb_blueprint = sel4::ObjectBlueprint::Tcb;
         untyped.untyped_retype(
             &tcb_blueprint,
@@ -257,7 +257,7 @@ impl ObjectAllocator {
         // debug_println!("untypedlist info: {:?}", self.untyped_list);
         let eps = self.alloc_many_ep(cnt_bits);
         let tcbs = self.alloc_many_tcb(cnt_bits);
-        let cnode = sel4::BootInfo::init_thread_cnode();
+        let cnode = sel4::init_thread::slot::CNODE.cap();
         let vspace = sel4::BootInfo::init_thread_vspace();
         for i in 0..cnt {
             let ipc_buffer_layout = Layout::from_size_align(4096, 4096)
@@ -329,7 +329,7 @@ impl ObjectAllocator {
         let ipc_buffer_cap = UserImageUtils.get_user_image_frame_slot(ipc_buffer_addr) as u64;
         let tcb = self.alloc_tcb()?;
         let ep = self.alloc_ep()?;
-        let cnode = sel4::BootInfo::init_thread_cnode();
+        let cnode = sel4::init_thread::slot::CNODE.cap();
         let vspace = sel4::BootInfo::init_thread_vspace();
         let ipc_buffer = LocalCPtr::<sel4::cap_type::_4kPage>::from_bits(ipc_buffer_cap);
         tcb.tcb_configure(ep.cptr(), cnode, CNodeCapData::new(0, 0), vspace, ipc_buffer_addr as u64, ipc_buffer)?;

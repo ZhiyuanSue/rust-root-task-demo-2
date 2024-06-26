@@ -11,7 +11,7 @@ use lazy_static::lazy_static;
 use sel4::{BootInfo, init_thread};
 use sel4_root_task::debug_println;
 use sel4::cap_type::{Untyped, MegaPage};
-use sel4::{FrameSize, ObjectBlueprint, ObjectBlueprintArch, VmAttributes, CapRights};
+use sel4::{FrameObjectType, ObjectBlueprint, ObjectBlueprintArch, VmAttributes, CapRights};
 use sel4::get_clock;
 use smoltcp::iface::SocketSet;
 use smoltcp::phy::{Device, DeviceCapabilities, Medium, RxToken, TxToken};
@@ -270,16 +270,16 @@ fn init_mmio(boot_info: &BootInfo) {
                 desc.size_bits(),
                 desc.is_device()
             );
-            net_untyped = BootInfo::init_cspace_local_cptr::<Untyped>(boot_info.untyped().start + i);
+            net_untyped = BootInfo::init_cspace_local_cptr::<Untyped>(boot_info.untyped().start() + i);
             net_untyped_bits = desc.size_bits();
             break;
         }
     }
     let net_untyped_slot = obj_allocator.lock().get_empty_slot();
-    let retype_bits = net_untyped_bits - FrameSize::MEGA_BITS - 7;
+    let retype_bits = net_untyped_bits - FrameObjectType::MEGA_PAGE_BITS - 7;
     let retype_num = (1 << retype_bits);
     let bluprint = ObjectBlueprint::Untyped {
-        size_bits: FrameSize::MEGA_BITS + 7
+        size_bits: FrameObjectType::MEGA_PAGE_BITS + 7
     };
 
     let cnode = init_thread::slot::CNODE.cap();
@@ -312,7 +312,7 @@ fn init_mmio(boot_info: &BootInfo) {
         let net_frame = BootInfo::init_cspace_local_cptr::<MegaPage>(net_frame_slot + i);
         let paddr = net_frame.frame_get_address().unwrap();
         debug_println!("paddr: {:#x}", paddr);
-        if paddr <= DMA_ADDRESS && paddr + (1 << FrameSize::MEGA_BITS) > ETH_ADDRESS {
+        if paddr <= DMA_ADDRESS && paddr + (1 << FrameObjectType::MEGA_PAGE_BITS) > ETH_ADDRESS {
             debug_println!("net_frame paddr: {:#x}", paddr);
             let vaddr = paddr;
             let l2_page_table = obj_allocator.lock().alloc_page_table().unwrap();
