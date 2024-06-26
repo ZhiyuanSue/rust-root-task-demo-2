@@ -31,10 +31,8 @@ pub fn mutex_print(s: String) {
 }
 
 pub fn async_helper_thread(arg: usize, ipc_buffer_addr: usize) {
-    let ipc_buffer = ipc_buffer_addr as *mut sel4::sys::seL4_IPCBuffer;
-    let ipcbuf = unsafe {
-        &mut sel4::IpcBuffer(ipc_buffer)
-    };
+    // let ipc_buffer = ipc_buffer_addr as *mut sel4::sys::seL4_IPCBuffer;
+    let ipcbuf = unsafe{(usize::try_from(ipc_buffer_addr).unwrap() as *mut sel4::IpcBuffer).as_mut().unwrap()};
     sel4::set_ipc_buffer(ipcbuf);
     runtime_init();
     let async_args = AsyncArgs::from_ptr(arg);
@@ -167,7 +165,7 @@ pub fn async_ipc_test(_bootinfo: &sel4::BootInfo) -> sel4::Result<!>  {
         badge,
     )?;
 
-    let recv_tcb = sel4::init_thread::slot::TCB;
+    let recv_tcb = sel4::init_thread::slot::TCB.cap();
     recv_tcb.tcb_bind_notification(unbadged_notification)?;
     register_receiver(recv_tcb, unbadged_notification, uintr_handler as usize)?;
 
@@ -209,10 +207,8 @@ pub fn async_ipc_test(_bootinfo: &sel4::BootInfo) -> sel4::Result<!>  {
 
 fn sync_helper_thread(ep_bits: usize, ipc_buffer_addr: usize) {
     debug_println!("hello sync_helper_thread");
-    let ipc_buffer = ipc_buffer_addr as *mut sel4::sys::seL4_IPCBuffer;
-    let ipcbuf = unsafe {
-        &mut sel4::IpcBuffer(ipc_buffer)
-    };
+    // let ipc_buffer = ipc_buffer_addr as *mut sel4::sys::seL4_IPCBuffer;
+    let ipcbuf = unsafe{(usize::try_from(ipc_buffer_addr).unwrap() as *mut sel4::IpcBuffer).as_mut().unwrap()};
     sel4::set_ipc_buffer(ipcbuf);
     let ep = Cap::<Endpoint>::from_bits(ep_bits as u64);
     let msg = MessageInfo::new(1, 0, 0, 1);

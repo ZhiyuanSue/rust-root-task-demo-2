@@ -83,10 +83,8 @@ fn create_c_s_ipc_channel(ntfn: Cap<Notification>) {
 }
 
 fn tcp_server_thread(arg: usize, ipc_buffer_addr: usize) {
-    let ipc_buffer = ipc_buffer_addr as *mut sel4::sys::seL4_IPCBuffer;
-    let ipcbuf = unsafe {
-        &mut sel4::IpcBuffer(ipc_buffer)
-    };
+    // let ipc_buffer = ipc_buffer_addr as *mut sel4::sys::seL4_IPCBuffer;
+    let ipcbuf = unsafe{(usize::try_from(ipc_buffer_addr).unwrap() as *mut sel4::IpcBuffer).as_mut().unwrap()};
     sel4::set_ipc_buffer(ipcbuf);
     runtime_init();
     let async_args = AsyncArgs::from_ptr(arg);

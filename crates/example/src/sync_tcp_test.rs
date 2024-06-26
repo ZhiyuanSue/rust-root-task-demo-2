@@ -293,10 +293,8 @@ fn create_c_s_ipc_channel(thread_num_bits: usize) -> Vec<Cap<Endpoint>> {
 fn tcp_server(args: usize, ipc_buffer_addr: usize) {
     let arg = SyncArgs::from_ptr(args);
     let ep = Cap::<Endpoint>::from_cptr(arg.ep);
-    let ipc_buffer = ipc_buffer_addr as *mut sel4::sys::seL4_IPCBuffer;
-    let ipcbuf = unsafe {
-        &mut sel4::IpcBuffer(ipc_buffer)
-    };
+    // let ipc_buffer = ipc_buffer_addr as *mut sel4::sys::seL4_IPCBuffer;
+    let ipcbuf = unsafe{(usize::try_from(ipc_buffer_addr).unwrap() as *mut sel4::IpcBuffer).as_mut().unwrap()};
     sel4::set_ipc_buffer(ipcbuf);
     let thread = arg.tcb.unwrap();
     let send = true;

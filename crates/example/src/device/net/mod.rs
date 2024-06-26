@@ -35,7 +35,7 @@ pub static INTERFACE: Lazy<Arc<Mutex<Interface>>> = Lazy::new(|| Arc::new(Mutex:
 pub fn init_net_interrupt_handler() -> (Cap<IrqHandler>, Cap<Notification>) {
     let obj_allocator = &GLOBAL_OBJ_ALLOCATOR;
     let irq_ctrl = init_thread::slot::IRQ_CONTROL.cap();
-    let irq_handler = (obj_allocator.lock().get_empty_slot().index() as u64).cap();
+    let irq_handler = obj_allocator.lock().get_empty_slot().cap().cast::<IrqHandler>();
 	// let irq_handler = BootInfo::init_cspace_local_cptr::<IrqHandler>(obj_allocator.lock().get_empty_slot());
     irq_ctrl.irq_control_get(PLIC_NET_IRQ, &init_thread::slot::CNODE.cap().relative(irq_handler)).unwrap();
 
