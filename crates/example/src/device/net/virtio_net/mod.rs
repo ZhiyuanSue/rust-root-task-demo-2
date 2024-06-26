@@ -11,7 +11,7 @@ use spin::{Lazy, Mutex};
 use virtio_drivers::{BufferDirection, Hal};
 use virtio_drivers::device::net::{RxBuffer, TxBuffer, VirtIONet};
 use virtio_drivers::transport::mmio::{MmioTransport, VirtIOHeader};
-use sel4::BootInfo;
+use sel4::{BootInfo, init_thread};
 use sel4::cap_type::{Untyped, MegaPage};
 use sel4::{FrameObjectType, ObjectBlueprint, ObjectBlueprintArch, VmAttributes, CapRights};
 use sel4_logging::log::debug;
@@ -207,9 +207,9 @@ fn init_mmio(boot_info: &BootInfo) {
             debug_println!("virtio_frame paddr: {:#x}", paddr);
             let vaddr = paddr;
             // let l2_page_table = obj_allocator.lock().alloc_page_table().unwrap();
-            // l2_page_table.page_table_map(BootInfo::init_thread_vspace(), vaddr, VmAttributes::DEFAULT).unwrap();
+            // l2_page_table.page_table_map(init_thread::slot::VSPACE.cap(), vaddr, VmAttributes::DEFAULT).unwrap();
             virtio_frame.frame_map(
-                BootInfo::init_thread_vspace(),
+                init_thread::slot::VSPACE.cap(),
                 vaddr,
                 CapRights::read_write(),
                 VmAttributes::DEFAULT,

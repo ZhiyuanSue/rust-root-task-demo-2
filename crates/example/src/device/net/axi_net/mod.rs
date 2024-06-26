@@ -316,9 +316,9 @@ fn init_mmio(boot_info: &BootInfo) {
             debug_println!("net_frame paddr: {:#x}", paddr);
             let vaddr = paddr;
             let l2_page_table = obj_allocator.lock().alloc_page_table().unwrap();
-            l2_page_table.page_table_map(BootInfo::init_thread_vspace(), vaddr, VmAttributes::DEFAULT).unwrap();
+            l2_page_table.page_table_map(init_thread::slot::VSPACE.cap(), vaddr, VmAttributes::DEFAULT).unwrap();
             net_frame.frame_map(
-                BootInfo::init_thread_vspace(),
+                init_thread::slot::VSPACE.cap(),
                 vaddr,
                 CapRights::read_write(),
                 VmAttributes::DEFAULT,

@@ -5,10 +5,11 @@ use alloc::sync::Arc;
 use core::alloc::Layout;
 use core::mem::{forget, size_of};
 use async_runtime::{coroutine_is_empty, coroutine_run_until_blocked, coroutine_run_until_complete, coroutine_spawn_with_prio, runtime_init, NewBuffer};
-use sel4::{BootInfo, CPtr, IpcBuffer, LocalCPtr, init_thread};
+use sel4::{BootInfo, CPtr, IpcBuffer, Cap, init_thread};
 use sel4::cap_type::{Endpoint, Notification, Tcb};
 use sel4_root_task::{debug_println, debug_print};
 use sel4::{get_clock, r#yield};
+use sel4_capdl_initializer_core::Initializer;
 use uintr::{register_receiver, register_sender};
 use crate::async_lib::{recv_reply_coroutine, register_recv_cid, register_sender_buffer, uintr_handler, AsyncArgs, SenderID, UINT_TRIGGER};
 use crate::image_utils::UserImageUtils;
@@ -29,7 +30,7 @@ pub fn net_stack_test(boot_info: &BootInfo) -> sel4::Result<!> {
 }
 
 
-fn create_c_s_ipc_channel(ntfn: LocalCPtr<Notification>) {
+fn create_c_s_ipc_channel(ntfn: Cap<Notification>) {
     let new_buffer_layout = Layout::from_size_align(size_of::<NewBuffer>(), 4096).expect("Failed to create layout for page aligned memory allocation");
     let new_buffer_ref = unsafe {
         let ptr = alloc_zeroed(new_buffer_layout);
@@ -70,7 +71,7 @@ fn create_c_s_ipc_channel(ntfn: LocalCPtr<Notification>) {
     async_args.req_ntfn = Some(badged_notification.cptr().bits());
     async_args.child_tcb = Some(GLOBAL_OBJ_ALLOCATOR.lock().create_thread(tcp_server_thread, async_args.get_ptr(), 255, 0, true).unwrap().cptr().bits());
     while async_args.reply_ntfn.is_none() {}
-    let res_send_reply_id = register_sender(LocalCPtr::from_bits(async_args.reply_ntfn.unwrap()));
+    let res_send_reply_id = register_sender(Cap::from_bits(async_args.reply_ntfn.unwrap()));
     if res_send_reply_id.is_err() {
         panic!("fail to register_sender!")
     }
@@ -91,7 +92,7 @@ fn tcp_server_thread(arg: usize, ipc_buffer_addr: usize) {
     while async_args.child_tcb.is_none() || async_args.req_ntfn.is_none() || async_args.ipc_new_buffer.is_none() {}
     let cid = coroutine_spawn_with_prio(Box::pin(recv_reply_coroutine(arg, usize::MAX)), 0);
     let badge = register_recv_cid(&cid).unwrap() as u64;
-    let tcb = LocalCPtr::<Tcb>::from_bits(async_args.child_tcb.unwrap());
+    let tcb = Cap::<Tcb>::from_bits(async_args.child_tcb.unwrap());
     let reply_ntfn = GLOBAL_OBJ_ALLOCATOR.lock().alloc_ntfn().unwrap();
     let badged_reply_notification = BootInfo::init_cspace_local_cptr::<Notification>(
         GLOBAL_OBJ_ALLOCATOR.lock().get_empty_slot(),
@@ -107,7 +108,7 @@ fn tcp_server_thread(arg: usize, ipc_buffer_addr: usize) {
     tcb.tcb_bind_notification(reply_ntfn).unwrap();
     register_receiver(tcb, reply_ntfn, uintr_handler as usize).unwrap();
     let new_buffer = async_args.ipc_new_buffer.as_mut().unwrap();
-    let res_sender_id = register_sender_buffer(LocalCPtr::from_bits(async_args.req_ntfn.unwrap()), new_buffer);
+    let res_sender_id = register_sender_buffer(Cap::from_bits(async_args.req_ntfn.unwrap()), new_buffer);
     if res_sender_id.is_err() {
         panic!("fail to register_sender")
     }

@@ -112,7 +112,7 @@ impl AsyncMemoryAllocator {
         let page_table = sel4::BootInfo::init_cspace_local_cptr::<sel4::cap_type::_4kPage>(
             pt_slot
         );
-        let vspace = sel4::BootInfo::init_thread_vspace();
+        let vspace = sel4::init_thread::slot::VSPACE.cap();
         let vaddr = 0x200_0000;
         syscall_riscv_pagetable_map(
             page_table.cptr(),
@@ -133,7 +133,7 @@ impl AsyncMemoryAllocator {
             // 分配slot并映射
             if let Some(slot) = self.alloc_slot() {
                 let frame = self.frames[slot];
-                let vspace = sel4::BootInfo::init_thread_vspace();
+                let vspace = sel4::init_thread::slot::VSPACE.cap();
                 syscall_riscv_page_map(
                     frame.cptr(),
                     vspace.cptr(),

@@ -86,23 +86,23 @@ pub unsafe fn __handler_entry(frame: *mut uintr_frame, handler: u64) {
     uipi_write(irqs);
 }
 
-pub fn register_receiver(tcb: cap::Tcb, ntfn: cap::Notification, handler: usize) -> Result<(), Error> {
+pub fn register_receiver(tcb: cap::Tcb, _ntfn: cap::Notification, _handler: usize) -> Result<(), Error> {
     // extern "C" {
     //     fn uintrvec();
     // }
     // unsafe {
     //     core::arch::asm!(concat!("csrw ", "0x005", ", {0}"), in(reg) uintrvec as usize);
-    //     core::arch::asm!(concat!("csrw ", "0x040", ", {0}"), in(reg) handler);
+    //     core::arch::asm!(concat!("csrw ", "0x040", ", {0}"), in(reg) _handler);
     //     core::arch::asm!(concat!("csrs ", "0x000", ", {0}"), in(reg) USTATUS_UIE);
     //     core::arch::asm!(concat!("csrs ", "0x004", ", {0}"), in(reg) MIE_USIE);
     // }
-    // return ntfn.register_receiver(tcb.cptr());
+    // return _ntfn.register_receiver(tcb.cptr());
 	Ok(())
 }
 
-pub fn register_sender(ntfn: cap::Notification) -> Result<u64, Error> {
+pub fn register_sender(_ntfn: cap::Notification) -> Result<u64, Error> {
     // sel4::debug_println!("register_sender");
-    // ntfn.register_sender()?;
+    // _ntfn.register_sender()?;
     // Ok(with_ipc_buffer(|buffer| {
     //     buffer.inner().uintr_flag
     //     // sel4::debug_println!("buffer ptr: {:#x}", buffer as *const IpcBuffer as usize);

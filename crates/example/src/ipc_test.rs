@@ -8,7 +8,7 @@ use core::mem::{self, size_of};
 use core::sync::atomic::AtomicUsize;
 use core::sync::atomic::Ordering::SeqCst;
 use async_runtime::{coroutine_get_current, coroutine_is_empty, coroutine_run_until_blocked, coroutine_run_until_complete, coroutine_spawn, coroutine_spawn_with_prio, get_executor_ptr, runtime_init, Executor, IPCItem, NewBuffer};
-use sel4::{IpcBuffer, LocalCPtr, MessageInfo};
+use sel4::{IpcBuffer, Cap, MessageInfo};
 use sel4::cap_type::{Endpoint, Tcb};
 use sel4_root_task::debug_println;
 use sel4::get_clock;
@@ -45,7 +45,7 @@ pub fn async_helper_thread(arg: usize, ipc_buffer_addr: usize) {
     debug_println!("[client] cid: {:?}, exec_ptr: {:#x}", cid, get_executor_ptr());
     let badge = register_recv_cid(&cid).unwrap() as u64;
     debug_println!("client: badge: {}", badge);
-    let tcb = LocalCPtr::<Tcb>::from_bits(async_args.child_tcb.unwrap());
+    let tcb = Cap::<Tcb>::from_bits(async_args.child_tcb.unwrap());
     let reply_ntfn = GLOBAL_OBJ_ALLOCATOR.lock().alloc_ntfn().unwrap();
     let badged_reply_notification = sel4::BootInfo::init_cspace_local_cptr::<sel4::cap_type::Notification>(
         GLOBAL_OBJ_ALLOCATOR.lock().get_empty_slot(),
@@ -61,7 +61,7 @@ pub fn async_helper_thread(arg: usize, ipc_buffer_addr: usize) {
     tcb.tcb_bind_notification(reply_ntfn).unwrap();
     register_receiver(tcb, reply_ntfn, uintr_handler as usize).unwrap();
 
-    let res_sender_id = register_sender_buffer(LocalCPtr::from_bits(async_args.req_ntfn.unwrap()), new_buffer);
+    let res_sender_id = register_sender_buffer(Cap::from_bits(async_args.req_ntfn.unwrap()), new_buffer);
     if res_sender_id.is_err() {
         panic!("fail to register_sender")
     }
@@ -182,7 +182,7 @@ pub fn async_ipc_test(_bootinfo: &sel4::BootInfo) -> sel4::Result<!>  {
     async_args.ipc_new_buffer = unsafe { Some(ipc_new_buffer) };
     async_args.child_tcb = Some(obj_allocator.lock().create_thread(async_helper_thread, async_args.get_ptr(), 255, 0, true)?.cptr().bits());
     while async_args.reply_ntfn.is_none() {}
-    let res_send_reply_id = register_sender(LocalCPtr::from_bits(async_args.reply_ntfn.unwrap()));
+    let res_send_reply_id = register_sender(Cap::from_bits(async_args.reply_ntfn.unwrap()));
     if res_send_reply_id.is_err() {
         panic!("fail to register_sender!")
     }
@@ -211,7 +211,7 @@ fn sync_helper_thread(ep_bits: usize, ipc_buffer_addr: usize) {
         IpcBuffer::from_ptr(ipc_buffer)
     };
     sel4::set_ipc_buffer(ipcbuf);
-    let ep = LocalCPtr::<Endpoint>::from_bits(ep_bits as u64);
+    let ep = Cap::<Endpoint>::from_bits(ep_bits as u64);
     let msg = MessageInfo::new(1, 0, 0, 1);
     debug_println!("hello sync_helper_thread2");
     let reply = ep.call(msg);

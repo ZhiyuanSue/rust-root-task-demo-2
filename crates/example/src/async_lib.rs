@@ -7,7 +7,7 @@ use core::sync::atomic::Ordering::SeqCst;
 use core::task::{Context, Poll};
 use async_runtime::{coroutine_delay_wake, coroutine_get_current, coroutine_possible_switch, coroutine_wake, AsyncMessageLabel, CoroutineId, IPCItem, NewBuffer, MAX_TASK_NUM};
 use async_runtime::utils::{IndexAllocator};
-use sel4::{CPtr, CPtrBits, CapRights, LocalCPtr, MessageInfo, cap};
+use sel4::{CPtr, CPtrBits, CapRights, Cap, MessageInfo, cap};
 use sel4::sys::invocation_label;
 use sel4::ObjectBlueprint;
 // use sel4::get_clock;
@@ -414,7 +414,7 @@ pub async fn seL4_RISCV_Page_Get_Address(
     let offset = vaddr % 4096;
     let new_vaddr = vaddr - offset;
     let frame_cap = UserImageUtils.get_user_image_frame_slot(new_vaddr);
-    let frame = LocalCPtr::<sel4::cap_type::_4kPage>::from_bits(frame_cap as u64);
+    let frame = Cap::<sel4::cap_type::_4kPage>::from_bits(frame_cap as u64);
     // frame.frame_get_address().unwrap() + offset;
     let bits = frame.cptr().bits();
     let sender_id = 63;

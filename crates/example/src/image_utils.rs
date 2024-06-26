@@ -1,6 +1,6 @@
 use core::ops::Range;
 use core::ptr;
-use sel4::{InitCSpaceSlot, LocalCPtr, SizedFrameType};
+use sel4::{InitCSpaceSlot, Cap, SizedFrameType};
 use sel4_root_task::debug_println;
 
 use crate::heap::HEAP_MEM;
@@ -35,7 +35,7 @@ impl UserImageUtils {
         let offset = vaddr % 4096;
         let new_vaddr = vaddr - offset;
         let frame_cap = self.get_user_image_frame_slot(new_vaddr);
-        let frame = LocalCPtr::<sel4::cap_type::_4kPage>::from_bits(frame_cap as u64);
+        let frame = Cap::<sel4::cap_type::_4kPage>::from_bits(frame_cap as u64);
         frame.frame_get_address().unwrap() + offset
     }
 

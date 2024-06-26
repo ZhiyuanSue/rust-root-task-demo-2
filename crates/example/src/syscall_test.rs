@@ -175,7 +175,7 @@ fn show_error_async_riscv_page_map() {
 fn test_sync_riscv_page_map(obj_allocator: &Mutex<ObjectAllocator>) {
     debug_println!("\nBegin Sync RISCV Page Map Test");
     let l2_pagetable = obj_allocator.lock().alloc_page_table().unwrap();
-    let vspace = sel4::BootInfo::init_thread_vspace();
+    let vspace = sel4::init_thread::slot::VSPACE.cap();
     let vaddr = 0x200_0000;
     l2_pagetable.page_table_map(vspace, vaddr, VmAttributes::default());
     
@@ -210,7 +210,7 @@ async fn test_async_riscv_page_section(obj_allocator: &Mutex<ObjectAllocator>) {
     );
 
     debug_println!("\nBegin Async RISCV PageTable Map Test");
-    let vspace = sel4::BootInfo::init_thread_vspace();
+    let vspace = sel4::init_thread::slot::VSPACE.cap();
     let vaddr = 0x200_0000;
     syscall_riscv_pagetable_map(
         page_table.cptr(),
@@ -259,7 +259,7 @@ async fn test_async_riscv_page_section(obj_allocator: &Mutex<ObjectAllocator>) {
 fn test_sync_riscv_page_unmap(obj_allocator: &Mutex<ObjectAllocator>) {
     debug_println!("\nBegin Sync RISCV Page Unmap Test");
     let l2_pagetable = obj_allocator.lock().alloc_page_table().unwrap();
-    let vspace = sel4::BootInfo::init_thread_vspace();
+    let vspace = sel4::init_thread::slot::VSPACE.cap();
     let vaddr = 0x200_0000;
     l2_pagetable.page_table_map(vspace, vaddr, VmAttributes::default());
     
@@ -276,7 +276,7 @@ fn test_sync_riscv_page_unmap(obj_allocator: &Mutex<ObjectAllocator>) {
 async fn test_async_riscv_page_unmap(obj_allocator: &Mutex<ObjectAllocator>) {
     debug_println!("\nBegin Async RISCV PageTable Unmap Test");
     let l2_pagetable = obj_allocator.lock().alloc_page_table().unwrap();
-    let vspace = sel4::BootInfo::init_thread_vspace();
+    let vspace = sel4::init_thread::slot::VSPACE.cap();
     let vaddr = 0x200_0000;
     l2_pagetable.page_table_map(vspace, vaddr, VmAttributes::default());
     
@@ -359,7 +359,7 @@ fn performance_test_init() {
     }
     // 申请页表
     let page_table = obj_allocator.lock().alloc_page_table().unwrap();
-    let vspace = sel4::BootInfo::init_thread_vspace();
+    let vspace = sel4::init_thread::slot::VSPACE.cap();
     let vaddr = 0x200_0000;
     page_table.page_table_map(vspace, vaddr, VmAttributes::default());
 }
@@ -384,7 +384,7 @@ fn async_address_test(ptr: usize) {
 }
 
 async fn async_memery_single_test(frame: LocalCPtr<_4kPage>, vaddr: usize) {
-    let vspace = sel4::BootInfo::init_thread_vspace();
+    let vspace = sel4::init_thread::slot::VSPACE.cap();
     for i in 0..EPOCH {
         syscall_riscv_page_map(
             frame.cptr(),
@@ -407,7 +407,7 @@ async fn async_address_single_test(vaddr: usize) {
 fn sync_memory_test() {
     // 测试 
     let mut vaddr = START_ADDR;
-    let vspace = sel4::BootInfo::init_thread_vspace();
+    let vspace = sel4::init_thread::slot::VSPACE.cap();
     for i in 0..MAX_PAGE_NUM {
         let frame = unsafe {
             FRAMES
