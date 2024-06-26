@@ -10,7 +10,6 @@
 #![feature(thread_local)]
 #![feature(int_roundings)]
 #![feature(slice_index_methods)]
-#![feature(build_hasher_simple_hash_one)]
 #![feature(new_uninit)]
 #![allow(dead_code, unused_imports)]
 extern crate alloc;

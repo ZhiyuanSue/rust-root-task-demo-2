@@ -1,9 +1,7 @@
 #![no_std]
 
 use core::arch::global_asm;
-use riscv::register::uip;
 use sel4::{cap, Error};
-use sel4::with_ipc_buffer;
 
 
 global_asm!(include_str!("uintr.asm"));

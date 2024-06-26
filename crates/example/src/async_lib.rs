@@ -285,7 +285,7 @@ pub static mut SUBMIT_SYSCALL_CNT: usize = 0;
 pub async fn seL4_Call_with_item(sender_id: &SenderID, item: &IPCItem) -> Result<IPCItem, ()> {
     if let Some(new_buffer) = unsafe { convert_option_mut_ref::<NewBuffer>(SENDER_MAP[*sender_id as usize]) } {
         // todo: bugs need to fix
-        let msg_info = item.msg_info;
+        let _msg_info = item.msg_info;
         new_buffer.req_items.write_free_item(&item).unwrap();
         // debug_println!("seL4_Call_with_item: write item: {:?}", msg_info);
         if new_buffer.recv_req_status.load(SeqCst) == false {
@@ -316,7 +316,7 @@ pub async fn seL4_Send_with_item(sender_id: &SenderID, item: &IPCItem) -> Result
     // let start = get_clock();
     if let Some(new_buffer) = unsafe { convert_option_mut_ref::<NewBuffer>(SENDER_MAP[*sender_id as usize]) } {
         // todo: bugs need to fix
-        let msg_info = item.msg_info;
+        let _msg_info = item.msg_info;
         new_buffer.req_items.write_free_item(&item).unwrap();
         // debug_println!("seL4_Call_with_item: write item: {:?}", msg_info);
         if new_buffer.recv_req_status.load(SeqCst) == false {

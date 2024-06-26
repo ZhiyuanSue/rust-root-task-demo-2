@@ -1,9 +1,7 @@
 use core::sync::atomic::AtomicBool;
-use spin::Mutex;
 use crate::coroutine::CoroutineId;
 use crate::utils::SafeRingBuffer;
 // use sel4::get_clock;
-use sel4::r#yield;
 use crate::utils::RingBuffer;
 
 pub const MAX_ITEM_NUM: usize = 4096;

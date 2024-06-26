@@ -62,7 +62,7 @@ impl AsyncMemoryAllocator {
         self.init().await;
         // 测试 
         let mut vaddr = START_ADDR;
-        for i in 0..MAX_PAGE_NUM {
+        for _i in 0..MAX_PAGE_NUM {
             // coroutine_spawn(Box::pin(single_test(self as *mut Self as usize, vaddr)));
             vaddr = vaddr + PAGE_SIZE;
         }
