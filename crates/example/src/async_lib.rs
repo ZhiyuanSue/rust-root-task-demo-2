@@ -11,7 +11,7 @@ use sel4::{CPtr, CPtrBits, CapRights, Cap, MessageInfo, cap};
 use sel4::sys::invocation_label;
 use sel4::ObjectBlueprint;
 // use sel4::get_clock;
-use sel4::wake_syscall_handler;
+// use sel4::wake_syscall_handler;
 use uintr::{register_sender, uintr_frame, uipi_send};
 
 use crate::image_utils::UserImageUtils;
@@ -301,7 +301,7 @@ pub async fn seL4_Call_with_item(sender_id: &SenderID, item: &IPCItem) -> Result
                 unsafe {
                     SUBMIT_SYSCALL_CNT += 1;
                 }
-                wake_syscall_handler();
+                // wake_syscall_handler();
             }
         }
 
@@ -329,7 +329,7 @@ pub async fn seL4_Send_with_item(sender_id: &SenderID, item: &IPCItem) -> Result
             } else {
                 // todo: submit syscall
                 // debug_println!("seL4_Call_with_item: Submit Syscall!");
-                wake_syscall_handler();
+                // wake_syscall_handler();
             }
         }
         // if let Some(res) = yield_now().await {
