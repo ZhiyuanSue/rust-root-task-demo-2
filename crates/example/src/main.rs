@@ -6,62 +6,94 @@
 
 #![no_std]
 #![no_main]
+#![feature(never_type)]
+#![feature(thread_local)]
+#![feature(int_roundings)]
+#![feature(slice_index_methods)]
+#![feature(build_hasher_simple_hash_one)]
+#![feature(new_uninit)]
+#![allow(dead_code, unused_imports)]
+extern crate alloc;
+mod heap;
+mod object_allocator;
+mod async_lib;
+mod image_utils;
+mod ipc_test;
+mod syscall_test;
+mod async_syscall;
 
-use sel4_root_task::{root_task, Never};
+mod device;
+mod async_tcp_test;
+mod sync_tcp_test;
+mod net;
+mod matrix;
+mod memory_allocator;
 
-#[root_task]
-fn main(bootinfo: &sel4::BootInfoPtr) -> sel4::Result<Never> {
-    sel4::debug_println!("Hello, World!");
+use alloc::alloc::alloc_zeroed;
+use core::alloc::Layout;
+use core::arch::asm;
 
-    let blueprint = sel4::ObjectBlueprint::Notification;
+use sel4::{IPCBuffer, with_ipc_buffer};
+use sel4_logging::LevelFilter;
+use sel4_root_task::{debug_print, debug_println};
+use sel4_root_task::root_task;
+use sel4_logging::{LoggerBuilder, Logger};
+use crate::ipc_test::{async_ipc_test, sync_ipc_test};
+use crate::syscall_test::async_syscall_test;
+use crate::object_allocator::GLOBAL_OBJ_ALLOCATOR;
+// use crate::sync_tcp_test::net_stack_test;
+use crate::async_tcp_test::net_stack_test;
 
-    let chosen_untyped_ix = bootinfo
-        .untyped_list()
-        .iter()
-        .position(|desc| !desc.is_device() && desc.size_bits() >= blueprint.physical_size_bits())
-        .unwrap();
+const LOG_LEVEL: LevelFilter = LevelFilter::Debug;
 
-    let untyped = bootinfo.untyped().index(chosen_untyped_ix).cap();
+static LOGGER: Logger = LoggerBuilder::const_default()
+    .level_filter(LOG_LEVEL)
+    .write(|s| debug_print!("{}", s))
+    .build();
 
-    let mut empty_slots = bootinfo
-        .empty()
-        .range()
-        .map(sel4::init_thread::Slot::from_index);
-    let unbadged_notification_slot = empty_slots.next().unwrap();
-    let badged_notification_slot = empty_slots.next().unwrap();
+fn expand_tls() {
+    const PAGE_SIZE: usize = 4096;
+    const TLS_SIZE: usize = 128;
+    let layout = Layout::from_size_align(TLS_SIZE * PAGE_SIZE, PAGE_SIZE)
+        .expect("Failed to create layout for page aligned memory allocation");
+    let vptr = unsafe {
+        let ptr = alloc_zeroed(layout);
+        if ptr.is_null() {
+            panic!("Failed to allocate page aligned memory");
+        }
+        ptr as usize
+    };
 
-    let cnode = sel4::init_thread::slot::CNODE.cap();
+    let ipc_buffer_ptr = with_ipc_buffer(|buffer| {
+        buffer.ptr() as *mut sel4::sys::seL4_IPCBuffer
+    });
 
-    untyped.untyped_retype(
-        &blueprint,
-        &cnode.relative_self(),
-        unbadged_notification_slot.index(),
-        1,
-    )?;
+    unsafe {
+        asm!("mv tp, {}", in(reg) vptr);
+    }
 
-    let badge = 0x1337;
+    let ipcbuf = unsafe {
+        IPCBuffer::from_ptr(ipc_buffer_ptr)
+    };
+    sel4::set_ipc_buffer(ipcbuf);
+}
 
-    cnode.relative(badged_notification_slot.cptr()).mint(
-        &cnode.relative(unbadged_notification_slot.cptr()),
-        sel4::CapRights::write_only(),
-        badge,
-    )?;
+#[root_task(stack_size = 4096 * 128)]
+fn main(bootinfo: &sel4::BootInfo) -> sel4::Result<!> {
+    debug_println!("Hello, World!");
+    LOGGER.set().unwrap();
+    heap::init_heap();
+    expand_tls();
+    let recv_tcb = sel4::BootInfo::init_thread_tcb();
+    recv_tcb.tcb_set_affinity(1);
+    image_utils::UserImageUtils.init(bootinfo);
+    GLOBAL_OBJ_ALLOCATOR.lock().init(bootinfo);
+    // async_ipc_test(bootinfo)?;
+    // net_stack_test(bootinfo)?;
+    // sync_ipc_test(bootinfo)?;
+    async_syscall_test(bootinfo)?;
+    debug_println!("TEST_PASS");
 
-    let unbadged_notification = unbadged_notification_slot
-        .downcast::<sel4::cap_type::Notification>()
-        .cap();
-    let badged_notification = badged_notification_slot
-        .downcast::<sel4::cap_type::Notification>()
-        .cap();
-
-    badged_notification.signal();
-
-    let (_, observed_badge) = unbadged_notification.wait();
-
-    sel4::debug_println!("badge = {:#x}", badge);
-    assert_eq!(observed_badge, badge);
-
-    sel4::debug_println!("TEST_PASS");
-
-    sel4::init_thread::suspend_self()
+    sel4::BootInfo::init_thread_tcb().tcb_suspend()?;
+    unreachable!()
 }
