@@ -7,7 +7,7 @@ use core::alloc::{Layout};
 use core::mem::size_of;
 use alloc::alloc::alloc_zeroed;
 use async_runtime::{coroutine_run_until_blocked, coroutine_spawn, NewBuffer};
-use sel4::{get_clock, CNode, CapRights, Cap, ObjectBlueprint, ObjectBlueprintArch, VmAttributes, cap};
+use sel4::{get_clock, CapRights, Cap, ObjectBlueprint, ObjectBlueprintArch, VmAttributes, cap};
 use sel4::CPtr;
 use sel4_root_task::debug_println;
 use crate::async_lib::{AsyncArgs, SUBMIT_SYSCALL_CNT, UINT_TRIGGER};

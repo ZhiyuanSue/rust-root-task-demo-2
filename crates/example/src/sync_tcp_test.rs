@@ -252,7 +252,7 @@ fn process_req(ep: Cap<Endpoint>) {
 
 fn create_c_s_ipc_channel(thread_num_bits: usize) -> Vec<Cap<Endpoint>> {
     let thread_num = 1 << thread_num_bits;
-    let cnode = init_thread::slot::TCB.cap();
+    let cnode = init_thread::slot::CNODE.cap();
     let mut eps = GLOBAL_OBJ_ALLOCATOR.lock().alloc_many_ep(thread_num_bits);
     let mut args = Vec::new();
     for i in 0..thread_num {
