@@ -32,6 +32,7 @@ mod memory_allocator;
 use alloc::alloc::alloc_zeroed;
 use core::alloc::Layout;
 use core::arch::asm;
+use alloc::boxed::Box;
 
 use sel4::{IpcBuffer, with_ipc_buffer};
 use sel4_logging::LevelFilter;
@@ -65,7 +66,7 @@ fn expand_tls() {
     };
 
     let ipc_buffer_ptr = with_ipc_buffer(|buffer| {
-        buffer.ptr() as *mut sel4::sys::seL4_IPCBuffer
+        buffer
     });
 
     unsafe {
@@ -73,7 +74,7 @@ fn expand_tls() {
     }
 
     let ipcbuf = unsafe {
-        usize::try_from(ipc_buffer_ptr) as *mut sel4::IpcBuffer
+        Box::new(ipc_buffer_ptr).as_mut()
     };
     sel4::set_ipc_buffer(ipcbuf);
 }
