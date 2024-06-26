@@ -68,7 +68,7 @@ pub fn async_syscall_test(bootinfo: &sel4::BootInfo) -> sel4::Result<!> {
     register_async_syscall_buffer(new_buffer_ptr);
     let new_buffer_cap = CPtr::from_bits(UserImageUtils.get_user_image_frame_slot(new_buffer_ptr).index() as u64);
     // debug_println!("async_syscall_test: new_buffer_cap: {}, new_buffer_ptr: {:#x}", new_buffer_cap.bits(), new_buffer_ptr);
-    badged_reply_ntfn.register_async_syscall(new_buffer_cap)?;
+    // badged_reply_ntfn.register_async_syscall(new_buffer_cap)?;
     
     // 输出类系统调用演示
     // coroutine_spawn(Box::pin(test_async_output_section(new_buffer_ptr)));

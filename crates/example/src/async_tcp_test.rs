@@ -46,7 +46,7 @@ fn create_c_s_ipc_channel(ntfn: Cap<Notification>) {
     //     res
     // };
     let new_buffer_cap = CPtr::from_bits(UserImageUtils.get_user_image_frame_slot(new_buffer_ref.get_ptr()).index() as u64);
-    ntfn.register_async_syscall(new_buffer_cap).unwrap();
+    // ntfn.register_async_syscall(new_buffer_cap).unwrap();
     let async_args = {
         let ref_args = Arc::new(AsyncArgs::new());
         let leaky_ref = unsafe { &mut *(ref_args.as_ref() as *const AsyncArgs as usize as *mut AsyncArgs) };
