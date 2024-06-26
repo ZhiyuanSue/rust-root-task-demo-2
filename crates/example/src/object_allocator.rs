@@ -1,10 +1,12 @@
 use alloc::alloc::alloc_zeroed;
 use alloc::vec::{self, Vec};
 use sel4::init_thread::SlotRegion;
+use sel4::cap_type;
 use core::alloc::Layout;
 use core::arch::asm;
 use core::borrow::BorrowMut;
 use core::ops::Range;
+use core::slice::SliceIndex;
 use spin::Mutex;
 use sel4::{CNodeCapData, init_thread::Slot, Cap, UntypedDesc};
 use sel4::cap_type::Untyped;
@@ -27,7 +29,7 @@ struct UsedUntypedDesc {
 pub struct ObjectAllocator {
     untyped_list: Vec<UsedUntypedDesc>,
     untyped_start: Slot,
-    empty: Region<Slot>,
+    empty: SlotRegion<cap_type::Null>,
 }
 
 #[warn(dead_code)]
@@ -52,7 +54,7 @@ impl ObjectAllocator {
         Self {
             untyped_list: Vec::new(),
             untyped_start: Slot::from_index(0),
-            empty: Range { start: 0, end: 0},
+            empty: SlotRegion::from_range(Range { start: 0, end: 0}),
         }
     }
 
@@ -92,18 +94,18 @@ impl ObjectAllocator {
 
     #[inline]
     pub fn get_empty_slot(&mut self) -> Slot {
-        self.empty.next().unwrap()
+        Slot::from_index(self.empty.range().next().unwrap())
     }
 
     pub fn alloc_ntfn(&mut self) -> sel4::Result<Cap<sel4::cap_type::Notification>> {
         let blueprint = sel4::ObjectBlueprint::Notification;
         let untyped = self.get_the_first_untyped_slot(&blueprint);
-        let slot = self.empty.next().unwrap();
+        let slot: Slot<sel4::cap_type::Notification> = Slot::from_index(self.empty.range().next().unwrap());
         let cnode = sel4::init_thread::slot::CNODE.cap();
         untyped.untyped_retype(
             &blueprint,
             &cnode.relative_self(),
-            slot,
+            slot.index(),
             1,
         )?;
         Ok(slot.cap())
@@ -115,12 +117,12 @@ impl ObjectAllocator {
     pub fn alloc_ep(&mut self) -> sel4::Result<Cap<sel4::cap_type::Endpoint>> {
         let blueprint = sel4::ObjectBlueprint::Endpoint;
         let untyped = self.get_the_first_untyped_slot(&blueprint);
-        let slot = self.empty.next().unwrap();
+        let slot: Slot<sel4::cap_type::Endpoint> = Slot::from_index(self.empty.range().next().unwrap());
         let cnode = sel4::init_thread::slot::CNODE.cap();
         untyped.untyped_retype(
             &blueprint,
             &cnode.relative_self(),
-            slot,
+            slot.index(),
             1,
         )?;
         Ok(slot.cap())
@@ -136,10 +138,10 @@ impl ObjectAllocator {
             size_bits: seL4_EndpointBits as usize + cnt_bits 
         };
         let untyped = self.get_the_first_untyped_slot(&blueprint);
-        let slot = self.empty.next().unwrap();
+        let slot = self.empty.range().next().unwrap();
         
         for _ in 1..cnt {
-            self.empty.next().unwrap();
+            self.empty.range().next().unwrap();
         }
         let cnode = sel4::init_thread::slot::CNODE.cap();
         let ep_blueprint = sel4::ObjectBlueprint::Endpoint;
@@ -159,12 +161,12 @@ impl ObjectAllocator {
     pub fn alloc_frame(&mut self) -> sel4::Result<Cap<sel4::cap_type::_4kPage>> {
         let blueprint = sel4::ObjectBlueprint::Arch(ObjectBlueprintArch::_4kPage);
         let untyped = self.get_the_first_untyped_slot(&blueprint);
-        let slot = self.empty.next().unwrap();
+        let slot: Slot<sel4::cap_type::_4kPage> = Slot::from_index(self.empty.range().next().unwrap());
         let cnode = sel4::init_thread::slot::CNODE.cap();
         untyped.untyped_retype(
             &blueprint,
             &cnode.relative_self(),
-            slot,
+            slot.index(),
             1,
         )?;
         Ok(slot.cap())
@@ -180,10 +182,10 @@ impl ObjectAllocator {
             size_bits: seL4_PageBits as usize + cnt_bits 
         };
         let untyped = self.get_the_first_untyped_slot(&blueprint);
-        let slot = self.empty.next().unwrap();
+        let slot = self.empty.range().next().unwrap();
         
         for _ in 1..cnt {
-            self.empty.next().unwrap();
+            self.empty.range().next().unwrap();
         }
         let cnode: Cap<sel4::cap_type::CNode> = sel4::init_thread::slot::CNODE.cap();
         let frame_blueprint = sel4::ObjectBlueprint::Arch(ObjectBlueprintArch::_4kPage);
@@ -203,12 +205,12 @@ impl ObjectAllocator {
     pub fn alloc_tcb(&mut self) -> sel4::Result<Cap<sel4::cap_type::Tcb>> {
         let blueprint = sel4::ObjectBlueprint::Tcb;
         let untyped = self.get_the_first_untyped_slot(&blueprint);
-        let slot = self.empty.next().unwrap();
+        let slot: Slot<sel4::cap_type::Tcb> = Slot::from_index(self.empty.range().next().unwrap());
         let cnode = sel4::init_thread::slot::CNODE.cap();
         untyped.untyped_retype(
             &blueprint,
             &cnode.relative_self(),
-            slot,
+            slot.index(),
             1,
         )?;
         Ok(slot.cap())
@@ -224,10 +226,10 @@ impl ObjectAllocator {
             size_bits: seL4_TCBBits as usize + cnt_bits 
         };
         let untyped = self.get_the_first_untyped_slot(&blueprint);
-        let slot = self.empty.next().unwrap();
+        let slot = self.empty.range().next().unwrap();
         
         for _ in 1..cnt {
-            self.empty.next().unwrap();
+            self.empty.range().next().unwrap();
         }
         let cnode = sel4::init_thread::slot::CNODE.cap();
         let tcb_blueprint = sel4::ObjectBlueprint::Tcb;
@@ -247,12 +249,12 @@ impl ObjectAllocator {
     pub fn alloc_page_table(&mut self) -> sel4::Result<Cap<sel4::cap_type::PageTable>> {
         let blueprint = sel4::ObjectBlueprint::Arch(ObjectBlueprintArch::PageTable);
         let untyped = self.get_the_first_untyped_slot(&blueprint);
-        let slot = self.empty.next().unwrap();
+        let slot: Slot<sel4::cap_type::PageTable> = Slot::from_index(self.empty.range().next().unwrap());
         let cnode = sel4::init_thread::slot::CNODE.cap();
         untyped.untyped_retype(
             &blueprint,
             &cnode.relative_self(),
-            slot,
+            slot.index(),
             1,
         )?;
         Ok(slot.cap())

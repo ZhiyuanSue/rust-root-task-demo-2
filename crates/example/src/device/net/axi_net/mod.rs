@@ -312,7 +312,7 @@ fn init_mmio(boot_info: &BootInfo) {
             1
         ).unwrap();
         let _ = obj_allocator.lock().get_empty_slot();
-        let net_frame = boot_info.untyped().index(i).cap();
+        let net_frame = boot_info.untyped().index(i).cap().cast::<sel4::cap_type::MegaPage>();
         let paddr = net_frame.frame_get_address().unwrap();
         debug_println!("paddr: {:#x}", paddr);
         if paddr <= DMA_ADDRESS && paddr + (1 << FrameObjectType::MEGA_PAGE_BITS) > ETH_ADDRESS {

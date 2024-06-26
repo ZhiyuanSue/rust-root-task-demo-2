@@ -300,7 +300,7 @@ async fn tcp_accept_coroutine(cid: CoroutineId, port: u16, async_args: &mut Asyn
         yield_now().await;
     }
     let new_buffer = async_args.ipc_new_buffer.as_mut().unwrap();
-    if let Ok((handle, (_local_ep, remote_ep))) = unsafe { LISTEN_TABLE.accept(port) } {
+    if let Ok((handle, (_local_ep, _remote_ep))) = unsafe { LISTEN_TABLE.accept(port) } {
         let reply = MessageBuilder::listen_reply(cid, handle);
         new_buffer.res_items.write_free_item(&reply).unwrap();
         if new_buffer.recv_reply_status.load(SeqCst) == false {

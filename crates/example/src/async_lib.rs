@@ -413,7 +413,7 @@ pub async fn seL4_RISCV_Page_Get_Address(
 ) -> Result<MessageInfo, ()> {
     let offset = vaddr % 4096;
     let new_vaddr = vaddr - offset;
-    let frame_cap = UserImageUtils.get_user_image_frame_slot(new_vaddr);
+    let frame_cap = UserImageUtils.get_user_image_frame_slot(new_vaddr).index();
     let frame = Cap::<sel4::cap_type::_4kPage>::from_bits(frame_cap as u64);
     // frame.frame_get_address().unwrap() + offset;
     let bits = frame.cptr().bits();

@@ -204,7 +204,7 @@ fn init_mmio(boot_info: &BootInfo) {
             1
         ).unwrap();
         let _ = obj_allocator.lock().get_empty_slot();
-        let virtio_frame = boot_info.untyped().index(i).cap();
+        let virtio_frame = boot_info.untyped().index(i).cap().cast::<sel4::cap_type::MegaPage>();
 		// let virtio_frame = BootInfo::init_cspace_local_cptr::<MegaPage>(virtio_frame_slot + i);
         let paddr = virtio_frame.frame_get_address().unwrap();
         if paddr <=NET_DEVICE_ADDR && paddr + (1 << FrameObjectType::MEGA_PAGE_BITS) > NET_DEVICE_ADDR {

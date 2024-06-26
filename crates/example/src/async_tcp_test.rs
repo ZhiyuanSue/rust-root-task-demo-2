@@ -146,7 +146,7 @@ async fn tcp_server(nw_sender_id: SenderID) {
     let need_recv = true;
     loop {
         if need_recv {
-            if let Ok(recv_size) = recv(listen_fd, tcp_buffer.as_mut(), 1).await {
+            if let Ok(_recv_size) = recv(listen_fd, tcp_buffer.as_mut(), 1).await {
                 // debug_println!("recv success, recv_size: {}", recv_size);
                 if tcp_buffer.data[0] == '.' as u8 {
                     break;

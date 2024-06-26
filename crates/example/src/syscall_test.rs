@@ -122,7 +122,7 @@ async fn test_async_notification_section(obj_allocator: &Mutex<ObjectAllocator>)
     debug_println!("\nBegin Async Untyped to Notification Syscall Test");
     // 生成tcb
     let cnode = sel4::init_thread::slot::CNODE.cap();
-    let mut async_args = AsyncArgs::new();
+    let async_args = AsyncArgs::new();
     let target_tcb_bits = obj_allocator.lock().create_thread(test_helper_thread, async_args.get_ptr(), 255, 1, true).unwrap().cptr().bits();
     let target_tcb: cap::Tcb = Cap::from_bits(target_tcb_bits);
     // 生成Notification
@@ -139,7 +139,7 @@ async fn test_async_notification_section(obj_allocator: &Mutex<ObjectAllocator>)
         dst.path().depth().try_into().unwrap(), 
         slot.index(), 
         1).await;
-    let notification  = slot.cap();
+    let notification  = slot.cap().cast::<sel4::cap_type::Notification>();
 	// let notification  = sel4::BootInfo::init_cspace_local_cptr::<sel4::cap_type::Notification>(
     //     slot
     // );

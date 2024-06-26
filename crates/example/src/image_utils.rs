@@ -2,6 +2,7 @@ use core::ops::Range;
 use core::ptr;
 use sel4::{init_thread::Slot, Cap};
 use sel4_root_task::debug_println;
+use sel4::CapTypeForFrameObjectOfFixedSize;
 
 use crate::heap::HEAP_MEM;
 
