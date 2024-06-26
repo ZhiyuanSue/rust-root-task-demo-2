@@ -1,0 +1,136 @@
+From 18a13efb15037186a45459dd7702e166b5cd7bd5 Mon Sep 17 00:00:00 2001
+From: ZhiyuanSue <2262387848@qq.com>
+Date: Wed, 26 Jun 2024 22:15:46 +0800
+Subject: [PATCH] some tmp changes
+
+---
+ crates/sel4-elf-header/src/lib.rs     |  2 ++
+ crates/sel4-initialize-tls/src/lib.rs |  2 ++
+ crates/sel4-logging/src/lib.rs        |  1 +
+ crates/sel4/src/debug.rs              |  4 ++++
+ crates/sel4/src/init_thread.rs        |  2 +-
+ crates/sel4/src/invocations.rs        | 15 ++++++++-------
+ crates/sel4/src/lib.rs                |  2 +-
+ crates/sel4/sys/build/main.rs         |  1 +
+ 8 files changed, 20 insertions(+), 9 deletions(-)
+
+diff --git a/crates/sel4-elf-header/src/lib.rs b/crates/sel4-elf-header/src/lib.rs
+index 1a086749..a08e0e44 100644
+--- a/crates/sel4-elf-header/src/lib.rs
++++ b/crates/sel4-elf-header/src/lib.rs
+@@ -6,6 +6,8 @@
+ 
+ #![no_std]
+ #![allow(dead_code)]
++#![feature(ptr_from_ref)]
++#![feature(pointer_byte_offsets)]
+ 
+ use core::ops::Range;
+ use core::ptr;
+diff --git a/crates/sel4-initialize-tls/src/lib.rs b/crates/sel4-initialize-tls/src/lib.rs
+index 138f4447..38cf01b9 100644
+--- a/crates/sel4-initialize-tls/src/lib.rs
++++ b/crates/sel4-initialize-tls/src/lib.rs
+@@ -16,6 +16,8 @@
+ // [3] https://github.com/riscv-non-isa/riscv-elf-psabi-doc/blob/master/riscv-elf.adoc#thread-local-storage
+ 
+ #![no_std]
++#![feature(pointer_byte_offsets)]
++#![feature(int_roundings)]
+ 
+ use core::alloc::Layout;
+ use core::mem;
+diff --git a/crates/sel4-logging/src/lib.rs b/crates/sel4-logging/src/lib.rs
+index cc8179ae..7d62670c 100644
+--- a/crates/sel4-logging/src/lib.rs
++++ b/crates/sel4-logging/src/lib.rs
+@@ -5,6 +5,7 @@
+ //
+ 
+ #![no_std]
++#![feature(const_mut_refs)]
+ 
+ use core::fmt::{self, Write};
+ 
+diff --git a/crates/sel4/src/debug.rs b/crates/sel4/src/debug.rs
+index d13e51ad..fa1f098a 100644
+--- a/crates/sel4/src/debug.rs
++++ b/crates/sel4/src/debug.rs
+@@ -7,6 +7,10 @@
+ 
+ use crate::{sys, InvocationContext, CapType, cap, Cap};
+ 
++pub fn get_clock() -> u64 {
++    0
++}
++
+ /// Corresponds to `seL4_DebugSnapshot`.
+ pub fn debug_snapshot() {
+     sys::seL4_DebugSnapshot()
+diff --git a/crates/sel4/src/init_thread.rs b/crates/sel4/src/init_thread.rs
+index dfd85f6e..8f625c08 100644
+--- a/crates/sel4/src/init_thread.rs
++++ b/crates/sel4/src/init_thread.rs
+@@ -76,7 +76,7 @@ pub struct SlotRegion<T: CapType> {
+ 
+ #[allow(clippy::len_without_is_empty)]
+ impl<T: CapType> SlotRegion<T> {
+-    pub(crate) const fn from_range(range: Range<usize>) -> Self {
++    pub const fn from_range(range: Range<usize>) -> Self {
+         Self {
+             range,
+             _phantom: PhantomData,
+diff --git a/crates/sel4/src/invocations.rs b/crates/sel4/src/invocations.rs
+index 14c0bf07..5aa12a36 100644
+--- a/crates/sel4/src/invocations.rs
++++ b/crates/sel4/src/invocations.rs
+@@ -206,13 +206,14 @@ impl<C: InvocationContext> Tcb<C> {
+     }
+ 
+     /// Corresponds to `seL4_TCB_SetAffinity`.
+-    #[sel4_cfg(all(not(KERNEL_MCS), not(MAX_NUM_NODES = "1")))]
+-    pub fn tcb_set_affinity(self, affinity: Word) -> Result<()> {
+-        Error::wrap(self.invoke(|cptr, ipc_buffer| {
+-            ipc_buffer
+-                .inner_mut()
+-                .seL4_TCB_SetAffinity(cptr.bits(), affinity)
+-        }))
++    // #[sel4_cfg(all(not(KERNEL_MCS), not(MAX_NUM_NODES = "1")))]
++    pub fn tcb_set_affinity(self, _affinity: Word) -> Result<()> {
++        // Error::wrap(self.invoke(|cptr, ipc_buffer| {
++        //     ipc_buffer
++        //         .inner_mut()
++        //         .seL4_TCB_SetAffinity(cptr.bits(), _affinity)
++        // }))
++		Ok(())
+     }
+ 
+     /// Corresponds to `seL4_TCB_SetTLSBase`.
+diff --git a/crates/sel4/src/lib.rs b/crates/sel4/src/lib.rs
+index 1b2f8312..e96de990 100644
+--- a/crates/sel4/src/lib.rs
++++ b/crates/sel4/src/lib.rs
+@@ -172,7 +172,7 @@ sel4_cfg_if! {
+     if #[sel4_cfg(DEBUG_BUILD)] {
+         mod debug;
+ 
+-        pub use debug::debug_snapshot;
++        pub use debug::{debug_snapshot,get_clock};
+     }
+ }
+ 
+diff --git a/crates/sel4/sys/build/main.rs b/crates/sel4/sys/build/main.rs
+index e078b749..593f57c7 100644
+--- a/crates/sel4/sys/build/main.rs
++++ b/crates/sel4/sys/build/main.rs
+@@ -3,6 +3,7 @@
+ //
+ // SPDX-License-Identifier: BSD-2-Clause
+ //
++#![feature(int_roundings)]
+ 
+ use std::env;
+ use std::fs;
+-- 
+2.34.1
+
