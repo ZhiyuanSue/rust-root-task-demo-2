@@ -153,7 +153,8 @@ pub fn init(boot_info: &BootInfo) {
 
 fn init_mmio(boot_info: &BootInfo) {
     let obj_allocator = &GLOBAL_OBJ_ALLOCATOR;
-    let (mut virtio_untyped, mut virtio_untyped_bits) = (BootInfo::init_cspace_local_cptr::<Untyped>(0), 0);
+	let (mut virtio_untyped, mut virtio_untyped_bits) = (boot_info.untyped().index(0).cap(), 0);
+    // let (mut virtio_untyped, mut virtio_untyped_bits) = (BootInfo::init_cspace_local_cptr::<Untyped>(0), 0);
     for (i, desc) in boot_info.untyped_list().iter().enumerate() {
         if desc.is_device() && desc.paddr() <= NET_DEVICE_ADDR && desc.paddr() + (1 << desc.size_bits()) > NET_DEVICE_ADDR {
             debug_println!(
@@ -162,7 +163,8 @@ fn init_mmio(boot_info: &BootInfo) {
                 desc.size_bits(),
                 desc.is_device()
             );
-            virtio_untyped = BootInfo::init_cspace_local_cptr::<Untyped>(boot_info.untyped().start + i);
+			virtio_untyped = boot_info.untyped().index(i).cap();
+            // virtio_untyped = BootInfo::init_cspace_local_cptr::<Untyped>(boot_info.untyped().start + i);
             virtio_untyped_bits = desc.size_bits();
             break;
         }
@@ -193,7 +195,8 @@ fn init_mmio(boot_info: &BootInfo) {
 
     for i in 0..retype_num {
         let bluprint = ObjectBlueprint::Arch(ObjectBlueprintArch::MegaPage);
-        let virtio_frame_untyped = BootInfo::init_cspace_local_cptr::<Untyped>(virtio_untyped_slot + i);
+		let virtio_frame_untyped = boot_info.untyped().index(i).cap();
+        // let virtio_frame_untyped = BootInfo::init_cspace_local_cptr::<Untyped>(virtio_untyped_slot + i);
         virtio_frame_untyped.untyped_retype(
             &bluprint,
             &cnode.relative_self(),
@@ -201,7 +204,8 @@ fn init_mmio(boot_info: &BootInfo) {
             1
         ).unwrap();
         let _ = obj_allocator.lock().get_empty_slot();
-        let virtio_frame = BootInfo::init_cspace_local_cptr::<MegaPage>(virtio_frame_slot + i);
+        let virtio_frame = boot_info.untyped().index(i).cap();
+		// let virtio_frame = BootInfo::init_cspace_local_cptr::<MegaPage>(virtio_frame_slot + i);
         let paddr = virtio_frame.frame_get_address().unwrap();
         if paddr <=NET_DEVICE_ADDR && paddr + (1 << FrameObjectType::MEGA_PAGE_BITS) > NET_DEVICE_ADDR {
             debug_println!("virtio_frame paddr: {:#x}", paddr);

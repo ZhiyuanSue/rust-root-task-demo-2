@@ -258,12 +258,13 @@ fn create_c_s_ipc_channel(thread_num_bits: usize) -> Vec<Cap<Endpoint>> {
     for i in 0..thread_num {
         let ep = eps[i];
         let badge = (i + 2) as u64;
-        let badge_ep = BootInfo::init_cspace_local_cptr::<Endpoint>(
-            GLOBAL_OBJ_ALLOCATOR.lock().get_empty_slot()
-        );
+		let badge_ep = GLOBAL_OBJ_ALLOCATOR.lock().get_empty_slot().cap();
+        // let badge_ep = BootInfo::init_cspace_local_cptr::<Endpoint>(
+        //     GLOBAL_OBJ_ALLOCATOR.lock().get_empty_slot()
+        // );
 
         cnode.relative(badge_ep).mint(
-            &cnode.relative(ep),
+            &cnode.relative(ep.cptr()),
             sel4::CapRights::all(),
             badge,
         ).unwrap();

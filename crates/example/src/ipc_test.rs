@@ -48,9 +48,10 @@ pub fn async_helper_thread(arg: usize, ipc_buffer_addr: usize) {
     debug_println!("client: badge: {}", badge);
     let tcb = Cap::<Tcb>::from_bits(async_args.child_tcb.unwrap());
     let reply_ntfn = GLOBAL_OBJ_ALLOCATOR.lock().alloc_ntfn().unwrap();
-    let badged_reply_notification = sel4::BootInfo::init_cspace_local_cptr::<sel4::cap_type::Notification>(
-        GLOBAL_OBJ_ALLOCATOR.lock().get_empty_slot(),
-    );
+    let badged_reply_notification = GLOBAL_OBJ_ALLOCATOR.lock().get_empty_slot().cap();
+	// let badged_reply_notification = sel4::BootInfo::init_cspace_local_cptr::<sel4::cap_type::Notification>(
+    //     GLOBAL_OBJ_ALLOCATOR.lock().get_empty_slot(),
+    // );
 
     let cnode = sel4::init_thread::slot::CNODE.cap();
     cnode.relative(badged_reply_notification).mint(
@@ -151,9 +152,10 @@ pub fn async_ipc_test(_bootinfo: &sel4::BootInfo) -> sel4::Result<!>  {
     debug_println!("exec size: {}", core::mem::size_of::<Executor>());
     let mut async_args = AsyncArgs::new();
     let unbadged_notification = obj_allocator.lock().alloc_ntfn().unwrap();
-    let badged_notification = sel4::BootInfo::init_cspace_local_cptr::<sel4::cap_type::Notification>(
-        obj_allocator.lock().get_empty_slot(),
-    );
+    let badged_notification = obj_allocator.lock().get_empty_slot().cap();
+	// let badged_notification = sel4::BootInfo::init_cspace_local_cptr::<sel4::cap_type::Notification>(
+    //     obj_allocator.lock().get_empty_slot(),
+    // );
 
     let cid = coroutine_spawn_with_prio(Box::pin(recv_req_coroutine(async_args.get_ptr())), 1);
     debug_println!("[server] cid: {:?}, exec_ptr: {:#x}", cid, get_executor_ptr());

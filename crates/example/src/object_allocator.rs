@@ -84,7 +84,8 @@ impl ObjectAllocator {
             // self.untyped_list.remove(idx);
             self.untyped_list[idx].used = true;
             let slot = self.untyped_start + idx;
-            sel4::BootInfo::init_cspace_local_cptr::<Untyped>(slot)
+            slot.cap()
+			// sel4::BootInfo::init_cspace_local_cptr::<Untyped>(slot)
         }
     }
 
@@ -104,9 +105,10 @@ impl ObjectAllocator {
             slot,
             1,
         )?;
-        Ok(sel4::BootInfo::init_cspace_local_cptr::<sel4::cap_type::Notification>(
-            slot,
-        ))
+        Ok(slot.cap())
+		// Ok(sel4::BootInfo::init_cspace_local_cptr::<sel4::cap_type::Notification>(
+        //     slot,
+        // ))
     }
 
     pub fn alloc_ep(&mut self) -> sel4::Result<Cap<sel4::cap_type::Endpoint>> {
@@ -120,9 +122,10 @@ impl ObjectAllocator {
             slot,
             1,
         )?;
-        Ok(sel4::BootInfo::init_cspace_local_cptr::<sel4::cap_type::Endpoint>(
-            slot,
-        ))
+        Ok(slot.cap())
+		// Ok(sel4::BootInfo::init_cspace_local_cptr::<sel4::cap_type::Notification>(
+        //     slot,
+        // ))
     }
 
     pub fn alloc_many_ep(&mut self, cnt_bits: usize) -> Vec<Cap<sel4::cap_type::Endpoint>> {
@@ -146,7 +149,8 @@ impl ObjectAllocator {
             cnt
         ).unwrap();
         for i in 0..cnt {
-            ans.push(sel4::BootInfo::init_cspace_local_cptr::<sel4::cap_type::Endpoint>(slot + i))
+            ans.push(i.cap())
+			// ans.push(sel4::BootInfo::init_cspace_local_cptr::<sel4::cap_type::Endpoint>(slot + i))
         };
         return ans;
     }
@@ -162,9 +166,10 @@ impl ObjectAllocator {
             slot,
             1,
         )?;
-        Ok(sel4::BootInfo::init_cspace_local_cptr::<sel4::cap_type::_4kPage>(
-            slot,
-        ))
+        Ok(slot.cap())
+		// Ok(sel4::BootInfo::init_cspace_local_cptr::<sel4::cap_type::Notification>(
+        //     slot,
+        // ))
     }
 
     pub fn alloc_many_frame(&mut self, cnt_bits: usize) -> Vec<Cap<sel4::cap_type::_4kPage>> {
@@ -188,7 +193,8 @@ impl ObjectAllocator {
             cnt
         ).unwrap();
         for i in 0..cnt {
-            ans.push(sel4::BootInfo::init_cspace_local_cptr::<sel4::cap_type::_4kPage>(slot + i))
+            ans.push(i.cap())
+			// ans.push(sel4::BootInfo::init_cspace_local_cptr::<sel4::cap_type::_4kPage>(slot + i))
         };
         return ans;
     }
@@ -204,9 +210,10 @@ impl ObjectAllocator {
             slot,
             1,
         )?;
-        Ok(sel4::BootInfo::init_cspace_local_cptr::<sel4::cap_type::Tcb>(
-            slot,
-        ))
+        Ok(slot.cap())
+		// Ok(sel4::BootInfo::init_cspace_local_cptr::<sel4::cap_type::Notification>(
+        //     slot,
+        // ))
     }
 
     pub fn alloc_many_tcb(&mut self, cnt_bits: usize) -> Vec<Cap<sel4::cap_type::Tcb>> {
@@ -230,7 +237,8 @@ impl ObjectAllocator {
             cnt
         ).unwrap();
         for i in 0..cnt {
-            ans.push(sel4::BootInfo::init_cspace_local_cptr::<sel4::cap_type::Tcb>(slot + i))
+            ans.push(i.cap())
+			// ans.push(sel4::BootInfo::init_cspace_local_cptr::<sel4::cap_type::Tcb>(slot + i))
         };
         return ans;
     }
@@ -246,9 +254,10 @@ impl ObjectAllocator {
             slot,
             1,
         )?;
-        Ok(sel4::BootInfo::init_cspace_local_cptr::<sel4::cap_type::PageTable>(
-            slot,
-        ))
+        Ok(slot.cap())
+		// Ok(sel4::BootInfo::init_cspace_local_cptr::<sel4::cap_type::Notification>(
+        //     slot,
+        // ))
     }
 
     pub fn create_many_threads(&mut self, cnt_bits: usize, func: fn(usize, usize), args: Vec<usize>, prio: usize, affinity: u64, resume: bool) -> Vec<Cap<sel4::cap_type::Tcb>> {

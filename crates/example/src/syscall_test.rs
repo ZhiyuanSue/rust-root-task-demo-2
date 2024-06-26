@@ -46,9 +46,10 @@ pub fn async_syscall_test(bootinfo: &sel4::BootInfo) -> sel4::Result<!> {
         &GLOBAL_OBJ_ALLOCATOR
     };
     let unbadged_reply_ntfn = obj_allocator.lock().alloc_ntfn().unwrap();
-    let badged_reply_ntfn = sel4::BootInfo::init_cspace_local_cptr::<sel4::cap_type::Notification>(
-        obj_allocator.lock().get_empty_slot(),
-    );
+    let badged_reply_ntfn = obj_allocator.lock().get_empty_slot().cap();
+	// let badged_reply_ntfn = sel4::BootInfo::init_cspace_local_cptr::<sel4::cap_type::Notification>(
+    //     obj_allocator.lock().get_empty_slot(),
+    // );
     debug_println!("async_syscall_test: spawn recv_reply_coroutine");
     let cid = coroutine_spawn(Box::pin(recv_reply_coroutine_async_syscall(new_buffer_ptr, REPLY_NUM)));
     debug_println!("async_syscall_test: cid: {:?}", cid);
@@ -138,9 +139,10 @@ async fn test_async_notification_section(obj_allocator: &Mutex<ObjectAllocator>)
         dst.path().depth().try_into().unwrap(), 
         slot, 
         1).await;
-    let notification  = sel4::BootInfo::init_cspace_local_cptr::<sel4::cap_type::Notification>(
-        slot
-    );
+    let notification  = slot.cap();
+	// let notification  = sel4::BootInfo::init_cspace_local_cptr::<sel4::cap_type::Notification>(
+    //     slot
+    // );
     // 绑定Notification
     debug_println!("\nBegin Async TCB Bind Notification Syscall Test");
     syscall_tcb_bind_notification(target_tcb, notification).await;
@@ -205,9 +207,10 @@ async fn test_async_riscv_page_section(obj_allocator: &Mutex<ObjectAllocator>) {
         dst.path().depth().try_into().unwrap(), 
         pt_slot, 
         1).await;
-    let page_table = sel4::BootInfo::init_cspace_local_cptr::<sel4::cap_type::_4kPage>(
-        pt_slot
-    );
+    let page_table = pt_slot.cap();
+	// let page_table = sel4::BootInfo::init_cspace_local_cptr::<sel4::cap_type::_4kPage>(
+    //     pt_slot
+    // );
 
     debug_println!("\nBegin Async RISCV PageTable Map Test");
     let vspace = sel4::init_thread::slot::VSPACE.cap();
@@ -232,9 +235,10 @@ async fn test_async_riscv_page_section(obj_allocator: &Mutex<ObjectAllocator>) {
         dst.path().depth().try_into().unwrap(), 
         frame_slot, 
         1).await;
-    let frame = sel4::BootInfo::init_cspace_local_cptr::<sel4::cap_type::_4kPage>(
-        frame_slot
-    );
+    let frame = frame_slot.cap();
+	// let frame = sel4::BootInfo::init_cspace_local_cptr::<sel4::cap_type::_4kPage>(
+    //     frame_slot
+    // );
     debug_println!("\nBegin Async RISCV Page Map Test");
     // let frame = obj_allocator.lock().alloc_frame().unwrap();
     syscall_riscv_page_map(

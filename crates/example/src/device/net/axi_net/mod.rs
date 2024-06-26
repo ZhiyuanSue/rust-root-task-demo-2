@@ -262,7 +262,8 @@ impl Device for AxiNet {
 
 fn init_mmio(boot_info: &BootInfo) {
     let obj_allocator = &GLOBAL_OBJ_ALLOCATOR;
-    let (mut net_untyped, mut net_untyped_bits) = (BootInfo::init_cspace_local_cptr::<Untyped>(0), 0);
+	let (mut net_untyped, mut net_untyped_bits) = (boot_info.untyped().index(0).cap(), 0);
+    // let (mut net_untyped, mut net_untyped_bits) = (BootInfo::init_cspace_local_cptr::<Untyped>(0), 0);
     for (i, desc) in boot_info.untyped_list().iter().enumerate() {
         if desc.is_device() && desc.paddr() <= DMA_ADDRESS && desc.paddr() + (1 << desc.size_bits()) > ETH_ADDRESS {
             debug_println!(
@@ -271,7 +272,8 @@ fn init_mmio(boot_info: &BootInfo) {
                 desc.size_bits(),
                 desc.is_device()
             );
-            net_untyped = BootInfo::init_cspace_local_cptr::<Untyped>(boot_info.untyped().start() + i);
+			net_untyped = boot_info.untyped().index(i).cap();
+            // net_untyped = BootInfo::init_cspace_local_cptr::<Untyped>(boot_info.untyped().start() + i);
             net_untyped_bits = desc.size_bits();
             break;
         }
@@ -302,7 +304,8 @@ fn init_mmio(boot_info: &BootInfo) {
 
     for i in 0..retype_num {
         let bluprint = ObjectBlueprint::Arch(ObjectBlueprintArch::MegaPage);
-        let net_frame_untyped = BootInfo::init_cspace_local_cptr::<Untyped>(net_untyped_slot + i);
+        let net_frame_untyped = boot_info.untyped().index(i).cap();
+		// let net_frame_untyped = BootInfo::init_cspace_local_cptr::<Untyped>(net_untyped_slot + i);
         net_frame_untyped.untyped_retype(
             &bluprint,
             &cnode.relative_self(),

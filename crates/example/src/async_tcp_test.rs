@@ -55,9 +55,10 @@ fn create_c_s_ipc_channel(ntfn: Cap<Notification>) {
     };
     async_args.ipc_new_buffer = Some(new_buffer_ref);
 
-    let badged_notification = BootInfo::init_cspace_local_cptr::<Notification>(
-        GLOBAL_OBJ_ALLOCATOR.lock().get_empty_slot(),
-    );
+	let badged_notification = GLOBAL_OBJ_ALLOCATOR.lock().get_empty_slot().cap();
+    // let badged_notification = BootInfo::init_cspace_local_cptr::<Notification>(
+    //     GLOBAL_OBJ_ALLOCATOR.lock().get_empty_slot(),
+    // );
 
     let cid = coroutine_spawn_with_prio(Box::pin(nw_recv_req_coroutine(async_args.get_ptr())), 1);
     let badge = register_recv_cid(&cid).unwrap() as u64;
@@ -94,9 +95,10 @@ fn tcp_server_thread(arg: usize, ipc_buffer_addr: usize) {
     let badge = register_recv_cid(&cid).unwrap() as u64;
     let tcb = Cap::<Tcb>::from_bits(async_args.child_tcb.unwrap());
     let reply_ntfn = GLOBAL_OBJ_ALLOCATOR.lock().alloc_ntfn().unwrap();
-    let badged_reply_notification = BootInfo::init_cspace_local_cptr::<Notification>(
-        GLOBAL_OBJ_ALLOCATOR.lock().get_empty_slot(),
-    );
+	let badged_reply_notification = GLOBAL_OBJ_ALLOCATOR.lock().get_empty_slot().cap();
+    // let badged_reply_notification = BootInfo::init_cspace_local_cptr::<Notification>(
+    //     GLOBAL_OBJ_ALLOCATOR.lock().get_empty_slot(),
+    // );
 
     let cnode = init_thread::slot::CNODE.cap();
     cnode.relative(badged_reply_notification).mint(

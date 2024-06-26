@@ -91,9 +91,10 @@ impl AsyncMemoryAllocator {
                 dst.path().depth().try_into().unwrap(), 
                 slot, 
                 1).await;
-            let frame = sel4::BootInfo::init_cspace_local_cptr::<sel4::cap_type::_4kPage>(
-                slot,
-            );
+            let frame = slot.cap();
+			// let frame = sel4::BootInfo::init_cspace_local_cptr::<sel4::cap_type::_4kPage>(
+            //     slot,
+            // );
             self.frames[i] = frame;
         }
         // 申请页表
@@ -109,9 +110,10 @@ impl AsyncMemoryAllocator {
             dst.path().depth().try_into().unwrap(), 
             pt_slot, 
             1).await;
-        let page_table = sel4::BootInfo::init_cspace_local_cptr::<sel4::cap_type::_4kPage>(
-            pt_slot
-        );
+        let page_table = pt_slot.cap();
+		// let page_table = sel4::BootInfo::init_cspace_local_cptr::<sel4::cap_type::_4kPage>(
+        //     pt_slot
+        // );
         let vspace = sel4::init_thread::slot::VSPACE.cap();
         let vaddr = 0x200_0000;
         syscall_riscv_pagetable_map(
