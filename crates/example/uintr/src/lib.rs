@@ -105,7 +105,7 @@ pub fn register_sender(ntfn: cap::Notification) -> Result<u64, Error> {
     // ntfn.register_sender()?;
     // Ok(with_ipc_buffer(|buffer| {
     //     buffer.inner().uintr_flag
-    //     // sel4::debug_println!("buffer ptr: {:#x}", buffer as *const IPCBuffer as usize);
+    //     // sel4::debug_println!("buffer ptr: {:#x}", buffer as *const IpcBuffer as usize);
     //     // a
     // }))
     Ok(1)

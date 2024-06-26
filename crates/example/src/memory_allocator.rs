@@ -1,6 +1,6 @@
 use alloc::{boxed::Box, vec::Vec};
 use async_runtime::{coroutine_run_until_blocked, coroutine_spawn};
-use sel4::{cap_type::_4KPage, debug_println, get_clock, CapRights, LocalCPtr, ObjectBlueprintArch, VMAttributes};
+use sel4::{cap_type::_4kPage, debug_println, get_clock, CapRights, LocalCPtr, ObjectBlueprintArch, VmAttributes};
 use super::async_syscall::*;
 use crate::object_allocator::GLOBAL_OBJ_ALLOCATOR;
 
@@ -27,7 +27,7 @@ impl TestData {
 pub struct AsyncMemoryAllocator {
     current: usize,
     recycled: Vec<usize>,
-    frames: [LocalCPtr<_4KPage>; MAX_PAGE_NUM],
+    frames: [LocalCPtr<_4kPage>; MAX_PAGE_NUM],
     mapped_vaddrs: [usize; MAX_PAGE_NUM]
 }
 
@@ -79,7 +79,7 @@ impl AsyncMemoryAllocator {
         let dst = cnode.relative_self();
         // 分配页框
         for i in 0..MAX_PAGE_NUM {
-            let blueprint = sel4::ObjectBlueprint::Arch(ObjectBlueprintArch::_4KPage);
+            let blueprint = sel4::ObjectBlueprint::Arch(ObjectBlueprintArch::_4kPage);
             let untyped = obj_allocator.lock().get_the_first_untyped_slot(&blueprint);
             let slot = obj_allocator.lock().get_empty_slot();
             syscall_untyped_retype(
@@ -91,7 +91,7 @@ impl AsyncMemoryAllocator {
                 dst.path().depth().try_into().unwrap(), 
                 slot, 
                 1).await;
-            let frame = sel4::BootInfo::init_cspace_local_cptr::<sel4::cap_type::_4KPage>(
+            let frame = sel4::BootInfo::init_cspace_local_cptr::<sel4::cap_type::_4kPage>(
                 slot,
             );
             self.frames[i] = frame;
@@ -109,7 +109,7 @@ impl AsyncMemoryAllocator {
             dst.path().depth().try_into().unwrap(), 
             pt_slot, 
             1).await;
-        let page_table = sel4::BootInfo::init_cspace_local_cptr::<sel4::cap_type::_4KPage>(
+        let page_table = sel4::BootInfo::init_cspace_local_cptr::<sel4::cap_type::_4kPage>(
             pt_slot
         );
         let vspace = sel4::BootInfo::init_thread_vspace();
@@ -118,7 +118,7 @@ impl AsyncMemoryAllocator {
             page_table.cptr(),
             vspace.cptr(),
             vaddr,
-            VMAttributes::default().into_inner() as usize
+            VmAttributes::default().into_inner() as usize
         ).await;
     }
 
@@ -139,7 +139,7 @@ impl AsyncMemoryAllocator {
                     vspace.cptr(),
                     vaddr,
                     CapRights::read_write().into_inner().0.inner()[0] as usize,
-                    VMAttributes::default().into_inner() as usize
+                    VmAttributes::default().into_inner() as usize
                 ).await;
                 self.mapped_vaddrs[slot] = vaddr;
             } else {
@@ -170,7 +170,7 @@ impl AsyncMemoryAllocator {
 pub struct SyncMemoryAllocator {
     current: usize,
     recycled: Vec<usize>,
-    frames: [LocalCPtr<_4KPage>; MAX_PAGE_NUM],
+    frames: [LocalCPtr<_4kPage>; MAX_PAGE_NUM],
     mapped_vaddrs: [usize; MAX_PAGE_NUM]
 }
 
@@ -232,7 +232,7 @@ impl SyncMemoryAllocator {
         let page_table = obj_allocator.lock().alloc_page_table().unwrap();
         let vspace = sel4::init_thread::slot::VSPACE.cap();
         let vaddr = 0x200_0000;
-        page_table.page_table_map(vspace, vaddr, VMAttributes::default());
+        page_table.page_table_map(vspace, vaddr, VmAttributes::default());
     }
 
     pub fn map_vaddr(&mut self, vaddr: usize){
@@ -242,7 +242,7 @@ impl SyncMemoryAllocator {
             if let Some(slot) = self.alloc_slot() {
                 let frame = self.frames[slot];
                 let vspace = sel4::init_thread::slot::VSPACE.cap();
-                frame.frame_map(vspace, vaddr, CapRights::read_write(), VMAttributes::default());
+                frame.frame_map(vspace, vaddr, CapRights::read_write(), VmAttributes::default());
                 self.mapped_vaddrs[slot] = vaddr;
             } else {
                 debug_println!("SyncMemoryAllocator: no available slot!");

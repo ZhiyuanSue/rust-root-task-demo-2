@@ -1,4 +1,4 @@
-use sel4::{CPtr, CapRights, Notification, ObjectBlueprint, PageTable, VMAttributes, TCB};
+use sel4::{CPtr, CapRights, ObjectBlueprint, PageTable, VmAttributes, cap};
 
 use crate::async_lib::{seL4_CNode_Copy, seL4_CNode_Delete, seL4_CNode_Mint, seL4_Putchar, seL4_Putstring, seL4_RISCV_PageTable_Map, seL4_RISCV_PageTable_Unmap, seL4_RISCV_Page_Get_Address, seL4_RISCV_Page_Map, seL4_RISCV_Page_Unmap, seL4_TCB_Bind_Notification, seL4_TCB_Unbind_Notification, seL4_Untyped_Retype};
 
@@ -33,11 +33,11 @@ pub async fn syscall_putstring(
     seL4_Putstring(data).await;
 }
 
-pub async fn syscall_tcb_bind_notification(tcb: TCB, notification: Notification) {
+pub async fn syscall_tcb_bind_notification(tcb: cap::Tcb, notification: cap::Notification) {
     seL4_TCB_Bind_Notification(tcb, notification).await;
 }
 
-pub async fn syscall_tcb_unbind_notification(tcb: TCB) {
+pub async fn syscall_tcb_unbind_notification(tcb: cap::Tcb) {
     seL4_TCB_Unbind_Notification(tcb).await;
 }
 

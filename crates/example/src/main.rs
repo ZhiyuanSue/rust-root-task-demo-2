@@ -33,7 +33,7 @@ use alloc::alloc::alloc_zeroed;
 use core::alloc::Layout;
 use core::arch::asm;
 
-use sel4::{IPCBuffer, with_ipc_buffer};
+use sel4::{IpcBuffer, with_ipc_buffer};
 use sel4_logging::LevelFilter;
 use sel4_root_task::{debug_print, debug_println};
 use sel4_root_task::root_task;
@@ -73,7 +73,7 @@ fn expand_tls() {
     }
 
     let ipcbuf = unsafe {
-        IPCBuffer::from_ptr(ipc_buffer_ptr)
+        IpcBuffer::from_ptr(ipc_buffer_ptr)
     };
     sel4::set_ipc_buffer(ipcbuf);
 }

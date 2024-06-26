@@ -8,10 +8,10 @@ use alloc::{boxed::Box, sync::Arc, vec};
 use async_runtime::utils::IndexAllocator;
 use axi_ethernet::{AxiEthernet, XAE_JUMBO_OPTION, XAE_BROADCAST_OPTION, LinkStatus};
 use lazy_static::lazy_static;
-use sel4::BootInfo;
+use sel4::{BootInfo, init_thread};
 use sel4_root_task::debug_println;
 use sel4::cap_type::{Untyped, MegaPage};
-use sel4::{FrameSize, ObjectBlueprint, ObjectBlueprintArch, VMAttributes, CapRights};
+use sel4::{FrameSize, ObjectBlueprint, ObjectBlueprintArch, VmAttributes, CapRights};
 use sel4::get_clock;
 use smoltcp::iface::SocketSet;
 use smoltcp::phy::{Device, DeviceCapabilities, Medium, RxToken, TxToken};
@@ -282,7 +282,7 @@ fn init_mmio(boot_info: &BootInfo) {
         size_bits: FrameSize::MEGA_BITS + 7
     };
 
-    let cnode = BootInfo::init_thread_cnode();
+    let cnode = init_thread::slot::CNODE.cap();
 
     net_untyped.untyped_retype(
         &bluprint,
@@ -316,12 +316,12 @@ fn init_mmio(boot_info: &BootInfo) {
             debug_println!("net_frame paddr: {:#x}", paddr);
             let vaddr = paddr;
             let l2_page_table = obj_allocator.lock().alloc_page_table().unwrap();
-            l2_page_table.page_table_map(BootInfo::init_thread_vspace(), vaddr, VMAttributes::DEFAULT).unwrap();
+            l2_page_table.page_table_map(BootInfo::init_thread_vspace(), vaddr, VmAttributes::DEFAULT).unwrap();
             net_frame.frame_map(
                 BootInfo::init_thread_vspace(),
                 vaddr,
                 CapRights::read_write(),
-                VMAttributes::DEFAULT,
+                VmAttributes::DEFAULT,
             ).unwrap();
             break;
         }

@@ -47,7 +47,7 @@ pub fn register_recv_cid(cid: &CoroutineId) -> Option<UIntVec> {
     }
 }
 
-pub fn register_sender_buffer(ntfn: Notification, new_buffer: &'static mut NewBuffer) -> Result<SenderID, ()> {
+pub fn register_sender_buffer(ntfn: cap::Notification, new_buffer: &'static mut NewBuffer) -> Result<SenderID, ()> {
     if let Ok(sender_id) = register_sender(ntfn) {
         // unsafe { SENDER_MAP.insert(sender_id as SenderID, new_buffer); }
         unsafe {
@@ -414,7 +414,7 @@ pub async fn seL4_RISCV_Page_Get_Address(
     let offset = vaddr % 4096;
     let new_vaddr = vaddr - offset;
     let frame_cap = UserImageUtils.get_user_image_frame_slot(new_vaddr);
-    let frame = LocalCPtr::<sel4::cap_type::_4KPage>::from_bits(frame_cap as u64);
+    let frame = LocalCPtr::<sel4::cap_type::_4kPage>::from_bits(frame_cap as u64);
     // frame.frame_get_address().unwrap() + offset;
     let bits = frame.cptr().bits();
     let sender_id = 63;

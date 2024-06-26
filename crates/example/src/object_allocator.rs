@@ -42,7 +42,7 @@ impl ObjectAllocator {
         }
         Self {
             untyped_list,
-            untyped_start: bootinfo.untyped().start,
+            untyped_start: bootinfo.untyped().start(),
             empty: bootinfo.empty()
         }
     }
@@ -66,7 +66,7 @@ impl ObjectAllocator {
             })
         }
         self.untyped_list = untyped_list;
-        self.untyped_start = bootinfo.untyped().start;
+        self.untyped_start = bootinfo.untyped().start();
         self.empty = bootinfo.empty();
     }
 
@@ -151,8 +151,8 @@ impl ObjectAllocator {
         return ans;
     }
 
-    pub fn alloc_frame(&mut self) -> sel4::Result<LocalCPtr<sel4::cap_type::_4KPage>> {
-        let blueprint = sel4::ObjectBlueprint::Arch(ObjectBlueprintArch::_4KPage);
+    pub fn alloc_frame(&mut self) -> sel4::Result<LocalCPtr<sel4::cap_type::_4kPage>> {
+        let blueprint = sel4::ObjectBlueprint::Arch(ObjectBlueprintArch::_4kPage);
         let untyped = self.get_the_first_untyped_slot(&blueprint);
         let slot = self.empty.next().unwrap();
         let cnode = sel4::BootInfo::init_thread_cnode();
@@ -162,12 +162,12 @@ impl ObjectAllocator {
             slot,
             1,
         )?;
-        Ok(sel4::BootInfo::init_cspace_local_cptr::<sel4::cap_type::_4KPage>(
+        Ok(sel4::BootInfo::init_cspace_local_cptr::<sel4::cap_type::_4kPage>(
             slot,
         ))
     }
 
-    pub fn alloc_many_frame(&mut self, cnt_bits: usize) -> Vec<LocalCPtr<sel4::cap_type::_4KPage>> {
+    pub fn alloc_many_frame(&mut self, cnt_bits: usize) -> Vec<LocalCPtr<sel4::cap_type::_4kPage>> {
         let cnt = 1 << cnt_bits;
         let mut ans = Vec::with_capacity(cnt);
         let blueprint = sel4::ObjectBlueprint::Untyped {
@@ -180,7 +180,7 @@ impl ObjectAllocator {
             self.empty.next().unwrap();
         }
         let cnode = sel4::BootInfo::init_thread_cnode();
-        let frame_blueprint = sel4::ObjectBlueprint::Arch(ObjectBlueprintArch::_4KPage);
+        let frame_blueprint = sel4::ObjectBlueprint::Arch(ObjectBlueprintArch::_4kPage);
         untyped.untyped_retype(
             &frame_blueprint,
             &cnode.relative_self(),
@@ -188,13 +188,13 @@ impl ObjectAllocator {
             cnt
         ).unwrap();
         for i in 0..cnt {
-            ans.push(sel4::BootInfo::init_cspace_local_cptr::<sel4::cap_type::_4KPage>(slot + i))
+            ans.push(sel4::BootInfo::init_cspace_local_cptr::<sel4::cap_type::_4kPage>(slot + i))
         };
         return ans;
     }
 
-    pub fn alloc_tcb(&mut self) -> sel4::Result<LocalCPtr<sel4::cap_type::TCB>> {
-        let blueprint = sel4::ObjectBlueprint::TCB;
+    pub fn alloc_tcb(&mut self) -> sel4::Result<LocalCPtr<sel4::cap_type::Tcb>> {
+        let blueprint = sel4::ObjectBlueprint::Tcb;
         let untyped = self.get_the_first_untyped_slot(&blueprint);
         let slot = self.empty.next().unwrap();
         let cnode = sel4::BootInfo::init_thread_cnode();
@@ -204,12 +204,12 @@ impl ObjectAllocator {
             slot,
             1,
         )?;
-        Ok(sel4::BootInfo::init_cspace_local_cptr::<sel4::cap_type::TCB>(
+        Ok(sel4::BootInfo::init_cspace_local_cptr::<sel4::cap_type::Tcb>(
             slot,
         ))
     }
 
-    pub fn alloc_many_tcb(&mut self, cnt_bits: usize) -> Vec<LocalCPtr<sel4::cap_type::TCB>> {
+    pub fn alloc_many_tcb(&mut self, cnt_bits: usize) -> Vec<LocalCPtr<sel4::cap_type::Tcb>> {
         let cnt = 1 << cnt_bits;
         let mut ans = Vec::with_capacity(cnt);
         let blueprint = sel4::ObjectBlueprint::Untyped {
@@ -222,7 +222,7 @@ impl ObjectAllocator {
             self.empty.next().unwrap();
         }
         let cnode = sel4::BootInfo::init_thread_cnode();
-        let tcb_blueprint = sel4::ObjectBlueprint::TCB;
+        let tcb_blueprint = sel4::ObjectBlueprint::Tcb;
         untyped.untyped_retype(
             &tcb_blueprint,
             &cnode.relative_self(),
@@ -230,7 +230,7 @@ impl ObjectAllocator {
             cnt
         ).unwrap();
         for i in 0..cnt {
-            ans.push(sel4::BootInfo::init_cspace_local_cptr::<sel4::cap_type::TCB>(slot + i))
+            ans.push(sel4::BootInfo::init_cspace_local_cptr::<sel4::cap_type::Tcb>(slot + i))
         };
         return ans;
     }
@@ -251,7 +251,7 @@ impl ObjectAllocator {
         ))
     }
 
-    pub fn create_many_threads(&mut self, cnt_bits: usize, func: fn(usize, usize), args: Vec<usize>, prio: usize, affinity: u64, resume: bool) -> Vec<LocalCPtr<sel4::cap_type::TCB>> {
+    pub fn create_many_threads(&mut self, cnt_bits: usize, func: fn(usize, usize), args: Vec<usize>, prio: usize, affinity: u64, resume: bool) -> Vec<LocalCPtr<sel4::cap_type::Tcb>> {
         let cnt = 1 << cnt_bits;
         assert_eq!(args.len(), cnt);
         // debug_println!("untypedlist info: {:?}", self.untyped_list);
@@ -272,7 +272,7 @@ impl ObjectAllocator {
             let ipc_buffer_cap = UserImageUtils.get_user_image_frame_slot(ipc_buffer_addr) as u64;
             let tcb = tcbs[i];
             let ep = eps[i];
-            let ipc_buffer = LocalCPtr::<sel4::cap_type::_4KPage>::from_bits(ipc_buffer_cap);
+            let ipc_buffer = LocalCPtr::<sel4::cap_type::_4kPage>::from_bits(ipc_buffer_cap);
             tcb.tcb_configure(ep.cptr(), cnode, CNodeCapData::new(0, 0), vspace, ipc_buffer_addr as u64, ipc_buffer).unwrap();
             tcb.tcb_set_sched_params(sel4::init_thread::slot::TCB.cap(), prio as u64, prio as u64).unwrap();
             let mut user_context = tcb.tcb_read_registers(false, (core::mem::size_of::<UserContext>() / sel4::WORD_SIZE) as u64).unwrap();
@@ -315,7 +315,7 @@ impl ObjectAllocator {
         tcbs
     }
 
-    pub fn create_thread(&mut self, func: fn(usize, usize), args: usize, prio: usize, affinity: u64, resume: bool) -> sel4::Result<LocalCPtr<sel4::cap_type::TCB>>
+    pub fn create_thread(&mut self, func: fn(usize, usize), args: usize, prio: usize, affinity: u64, resume: bool) -> sel4::Result<LocalCPtr<sel4::cap_type::Tcb>>
     {
         let ipc_buffer_layout = Layout::from_size_align(4096, 4096)
             .expect("Failed to create layout for page aligned memory allocation");
@@ -331,7 +331,7 @@ impl ObjectAllocator {
         let ep = self.alloc_ep()?;
         let cnode = sel4::BootInfo::init_thread_cnode();
         let vspace = sel4::BootInfo::init_thread_vspace();
-        let ipc_buffer = LocalCPtr::<sel4::cap_type::_4KPage>::from_bits(ipc_buffer_cap);
+        let ipc_buffer = LocalCPtr::<sel4::cap_type::_4kPage>::from_bits(ipc_buffer_cap);
         tcb.tcb_configure(ep.cptr(), cnode, CNodeCapData::new(0, 0), vspace, ipc_buffer_addr as u64, ipc_buffer)?;
         tcb.tcb_set_sched_params(sel4::init_thread::slot::TCB.cap(), prio as u64, prio as u64)?;
         let mut user_context = tcb.tcb_read_registers(false, (core::mem::size_of::<UserContext>() / sel4::WORD_SIZE) as u64)?;

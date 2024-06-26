@@ -5,8 +5,8 @@ use alloc::sync::Arc;
 use core::alloc::Layout;
 use core::mem::{forget, size_of};
 use async_runtime::{coroutine_is_empty, coroutine_run_until_blocked, coroutine_run_until_complete, coroutine_spawn_with_prio, runtime_init, NewBuffer};
-use sel4::{BootInfo, CPtr, IPCBuffer, LocalCPtr};
-use sel4::cap_type::{Endpoint, Notification, TCB};
+use sel4::{BootInfo, CPtr, IpcBuffer, LocalCPtr, init_thread};
+use sel4::cap_type::{Endpoint, Notification, Tcb};
 use sel4_root_task::{debug_println, debug_print};
 use sel4::{get_clock, r#yield};
 use uintr::{register_receiver, register_sender};
@@ -83,7 +83,7 @@ fn create_c_s_ipc_channel(ntfn: LocalCPtr<Notification>) {
 fn tcp_server_thread(arg: usize, ipc_buffer_addr: usize) {
     let ipc_buffer = ipc_buffer_addr as *mut sel4::sys::seL4_IPCBuffer;
     let ipcbuf = unsafe {
-        IPCBuffer::from_ptr(ipc_buffer)
+        IpcBuffer::from_ptr(ipc_buffer)
     };
     sel4::set_ipc_buffer(ipcbuf);
     runtime_init();
@@ -91,7 +91,7 @@ fn tcp_server_thread(arg: usize, ipc_buffer_addr: usize) {
     while async_args.child_tcb.is_none() || async_args.req_ntfn.is_none() || async_args.ipc_new_buffer.is_none() {}
     let cid = coroutine_spawn_with_prio(Box::pin(recv_reply_coroutine(arg, usize::MAX)), 0);
     let badge = register_recv_cid(&cid).unwrap() as u64;
-    let tcb = LocalCPtr::<TCB>::from_bits(async_args.child_tcb.unwrap());
+    let tcb = LocalCPtr::<Tcb>::from_bits(async_args.child_tcb.unwrap());
     let reply_ntfn = GLOBAL_OBJ_ALLOCATOR.lock().alloc_ntfn().unwrap();
     let badged_reply_notification = BootInfo::init_cspace_local_cptr::<Notification>(
         GLOBAL_OBJ_ALLOCATOR.lock().get_empty_slot(),

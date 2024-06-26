@@ -13,7 +13,7 @@ use virtio_drivers::device::net::{RxBuffer, TxBuffer, VirtIONet};
 use virtio_drivers::transport::mmio::{MmioTransport, VirtIOHeader};
 use sel4::BootInfo;
 use sel4::cap_type::{Untyped, MegaPage};
-use sel4::{FrameSize, ObjectBlueprint, ObjectBlueprintArch, VMAttributes, CapRights};
+use sel4::{FrameSize, ObjectBlueprint, ObjectBlueprintArch, VmAttributes, CapRights};
 use sel4_logging::log::debug;
 use sel4_root_task::debug_println;
 use crate::image_utils::UserImageUtils;
@@ -207,12 +207,12 @@ fn init_mmio(boot_info: &BootInfo) {
             debug_println!("virtio_frame paddr: {:#x}", paddr);
             let vaddr = paddr;
             // let l2_page_table = obj_allocator.lock().alloc_page_table().unwrap();
-            // l2_page_table.page_table_map(BootInfo::init_thread_vspace(), vaddr, VMAttributes::DEFAULT).unwrap();
+            // l2_page_table.page_table_map(BootInfo::init_thread_vspace(), vaddr, VmAttributes::DEFAULT).unwrap();
             virtio_frame.frame_map(
                 BootInfo::init_thread_vspace(),
                 vaddr,
                 CapRights::read_write(),
-                VMAttributes::DEFAULT,
+                VmAttributes::DEFAULT,
             ).unwrap();
             break;
         }

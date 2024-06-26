@@ -5,8 +5,8 @@ use smoltcp::iface::{Config, Interface};
 use smoltcp::time::Instant;
 use smoltcp::wire::EthernetAddress;
 use spin::{Lazy, Mutex};
-use sel4::{BootInfo, LocalCPtr};
-use sel4::cap_type::{IRQHandler, Notification};
+use sel4::{BootInfo, LocalCPtr, init_thread};
+use sel4::cap_type::{IrqHandler, Notification};
 use crate::device::net::virtio_net::get_net_device;
 use crate::object_allocator::GLOBAL_OBJ_ALLOCATOR;
 // pub use virtio_net::{NET_DEVICE, interrupt_handler};
@@ -32,11 +32,11 @@ pub static INTERFACE: Lazy<Arc<Mutex<Interface>>> = Lazy::new(|| Arc::new(Mutex:
     )
 )));
 
-pub fn init_net_interrupt_handler() -> (LocalCPtr<IRQHandler>, LocalCPtr<Notification>) {
+pub fn init_net_interrupt_handler() -> (LocalCPtr<IrqHandler>, LocalCPtr<Notification>) {
     let obj_allocator = &GLOBAL_OBJ_ALLOCATOR;
     let irq_ctrl = BootInfo::irq_control();
-    let irq_handler = BootInfo::init_cspace_local_cptr::<IRQHandler>(obj_allocator.lock().get_empty_slot());
-    irq_ctrl.irq_control_get(PLIC_NET_IRQ, &BootInfo::init_thread_cnode().relative(irq_handler)).unwrap();
+    let irq_handler = BootInfo::init_cspace_local_cptr::<IrqHandler>(obj_allocator.lock().get_empty_slot());
+    irq_ctrl.irq_control_get(PLIC_NET_IRQ, &init_thread::slot::CNODE.cap().relative(irq_handler)).unwrap();
 
     let handler_ntfn = obj_allocator.lock().alloc_ntfn().unwrap();
     irq_handler.irq_handler_set_notification(handler_ntfn).unwrap();

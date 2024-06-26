@@ -8,8 +8,8 @@ use core::mem::{self, size_of};
 use core::sync::atomic::AtomicUsize;
 use core::sync::atomic::Ordering::SeqCst;
 use async_runtime::{coroutine_get_current, coroutine_is_empty, coroutine_run_until_blocked, coroutine_run_until_complete, coroutine_spawn, coroutine_spawn_with_prio, get_executor_ptr, runtime_init, Executor, IPCItem, NewBuffer};
-use sel4::{IPCBuffer, LocalCPtr, MessageInfo};
-use sel4::cap_type::{Endpoint, TCB};
+use sel4::{IpcBuffer, LocalCPtr, MessageInfo};
+use sel4::cap_type::{Endpoint, Tcb};
 use sel4_root_task::debug_println;
 use sel4::get_clock;
 use sel4::r#yield;
@@ -32,7 +32,7 @@ pub fn mutex_print(s: String) {
 pub fn async_helper_thread(arg: usize, ipc_buffer_addr: usize) {
     let ipc_buffer = ipc_buffer_addr as *mut sel4::sys::seL4_IPCBuffer;
     let ipcbuf = unsafe {
-        IPCBuffer::from_ptr(ipc_buffer)
+        IpcBuffer::from_ptr(ipc_buffer)
     };
     sel4::set_ipc_buffer(ipcbuf);
     runtime_init();
@@ -45,7 +45,7 @@ pub fn async_helper_thread(arg: usize, ipc_buffer_addr: usize) {
     debug_println!("[client] cid: {:?}, exec_ptr: {:#x}", cid, get_executor_ptr());
     let badge = register_recv_cid(&cid).unwrap() as u64;
     debug_println!("client: badge: {}", badge);
-    let tcb = LocalCPtr::<TCB>::from_bits(async_args.child_tcb.unwrap());
+    let tcb = LocalCPtr::<Tcb>::from_bits(async_args.child_tcb.unwrap());
     let reply_ntfn = GLOBAL_OBJ_ALLOCATOR.lock().alloc_ntfn().unwrap();
     let badged_reply_notification = sel4::BootInfo::init_cspace_local_cptr::<sel4::cap_type::Notification>(
         GLOBAL_OBJ_ALLOCATOR.lock().get_empty_slot(),
@@ -101,7 +101,7 @@ async fn client_call_test(sender_id: SenderID, msg: u64) {
     unsafe {
         while MUTE_SEND_NUM > 0 {
             MUTE_SEND_NUM -= 1;
-            let item = IPCItem::from(coroutine_get_current(), msg as u32);;
+            let item = IPCItem::from(coroutine_get_current(), msg as u32);
             if let Ok(_reply) = seL4_Call_with_item(&sender_id, &item).await {
 
             } else {
@@ -208,7 +208,7 @@ fn sync_helper_thread(ep_bits: usize, ipc_buffer_addr: usize) {
     debug_println!("hello sync_helper_thread");
     let ipc_buffer = ipc_buffer_addr as *mut sel4::sys::seL4_IPCBuffer;
     let ipcbuf = unsafe {
-        IPCBuffer::from_ptr(ipc_buffer)
+        IpcBuffer::from_ptr(ipc_buffer)
     };
     sel4::set_ipc_buffer(ipcbuf);
     let ep = LocalCPtr::<Endpoint>::from_bits(ep_bits as u64);

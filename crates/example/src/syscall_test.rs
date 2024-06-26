@@ -1,14 +1,14 @@
 use alloc::boxed::Box;
 use alloc::sync::Arc;
 use async_runtime::{coroutine_run_until_complete, coroutine_spawn_with_prio, runtime_init};
-use sel4::cap_type::_4KPage;
+use sel4::cap_type::_4kPage;
 use spin::Mutex;
 use core::alloc::{Layout};
 use core::mem::size_of;
 use alloc::alloc::alloc_zeroed;
 use async_runtime::{coroutine_run_until_blocked, coroutine_spawn, NewBuffer};
-use sel4::{get_clock, CNode, CapRights, LocalCPtr, ObjectBlueprint, ObjectBlueprintArch, VMAttributes, TCB};
-use sel4::{CPtr, Notification};
+use sel4::{get_clock, CNode, CapRights, LocalCPtr, ObjectBlueprint, ObjectBlueprintArch, VmAttributes, cap};
+use sel4::CPtr;
 use sel4_root_task::debug_println;
 use crate::async_lib::{AsyncArgs, SUBMIT_SYSCALL_CNT, UINT_TRIGGER};
 use crate::async_lib::recv_reply_coroutine_async_syscall;
@@ -120,10 +120,10 @@ static test_data: [u16; 5] = ['1' as u16; 5];
 async fn test_async_notification_section(obj_allocator: &Mutex<ObjectAllocator>) {
     debug_println!("\nBegin Async Untyped to Notification Syscall Test");
     // 生成tcb
-    let cnode = sel4::BootInfo::init_thread_cnode();
+    let cnode = sel4::init_thread::slot::CNODE.cap();
     let mut async_args = AsyncArgs::new();
     let target_tcb_bits = obj_allocator.lock().create_thread(test_helper_thread, async_args.get_ptr(), 255, 1, true).unwrap().cptr().bits();
-    let target_tcb: TCB = LocalCPtr::from_bits(target_tcb_bits);
+    let target_tcb: cap::Tcb = LocalCPtr::from_bits(target_tcb_bits);
     // 生成Notification
     let blueprint = sel4::ObjectBlueprint::Notification;
     let untyped = obj_allocator.lock().get_the_first_untyped_slot(&blueprint);
@@ -177,10 +177,10 @@ fn test_sync_riscv_page_map(obj_allocator: &Mutex<ObjectAllocator>) {
     let l2_pagetable = obj_allocator.lock().alloc_page_table().unwrap();
     let vspace = sel4::BootInfo::init_thread_vspace();
     let vaddr = 0x200_0000;
-    l2_pagetable.page_table_map(vspace, vaddr, VMAttributes::default());
+    l2_pagetable.page_table_map(vspace, vaddr, VmAttributes::default());
     
     let frame = obj_allocator.lock().alloc_frame().unwrap();
-    frame.frame_map(vspace, vaddr, CapRights::read_write(), VMAttributes::default());
+    frame.frame_map(vspace, vaddr, CapRights::read_write(), VmAttributes::default());
     let data = unsafe {
         &mut *(vaddr as *mut TestData)
     };
@@ -190,7 +190,7 @@ fn test_sync_riscv_page_map(obj_allocator: &Mutex<ObjectAllocator>) {
 
 
 async fn test_async_riscv_page_section(obj_allocator: &Mutex<ObjectAllocator>) {
-    let cnode = sel4::BootInfo::init_thread_cnode();
+    let cnode = sel4::init_thread::slot::CNODE.cap();
     let dst = cnode.relative_self();    
     debug_println!("\nBegin Async Untyped to PageTable Test");
     let pt_blueprint = sel4::ObjectBlueprint::Arch(ObjectBlueprintArch::PageTable);
@@ -205,7 +205,7 @@ async fn test_async_riscv_page_section(obj_allocator: &Mutex<ObjectAllocator>) {
         dst.path().depth().try_into().unwrap(), 
         pt_slot, 
         1).await;
-    let page_table = sel4::BootInfo::init_cspace_local_cptr::<sel4::cap_type::_4KPage>(
+    let page_table = sel4::BootInfo::init_cspace_local_cptr::<sel4::cap_type::_4kPage>(
         pt_slot
     );
 
@@ -216,11 +216,11 @@ async fn test_async_riscv_page_section(obj_allocator: &Mutex<ObjectAllocator>) {
         page_table.cptr(),
         vspace.cptr(),
         vaddr,
-        VMAttributes::default().into_inner() as usize
+        VmAttributes::default().into_inner() as usize
     ).await;
 
     debug_println!("\nBegin Async Untyped to Frame Test");
-    let frame_blueprint = sel4::ObjectBlueprint::Arch(ObjectBlueprintArch::_4KPage);
+    let frame_blueprint = sel4::ObjectBlueprint::Arch(ObjectBlueprintArch::_4kPage);
     let frame_untyped = obj_allocator.lock().get_the_first_untyped_slot(&frame_blueprint);
     let frame_slot = obj_allocator.lock().get_empty_slot();
     syscall_untyped_retype(
@@ -232,7 +232,7 @@ async fn test_async_riscv_page_section(obj_allocator: &Mutex<ObjectAllocator>) {
         dst.path().depth().try_into().unwrap(), 
         frame_slot, 
         1).await;
-    let frame = sel4::BootInfo::init_cspace_local_cptr::<sel4::cap_type::_4KPage>(
+    let frame = sel4::BootInfo::init_cspace_local_cptr::<sel4::cap_type::_4kPage>(
         frame_slot
     );
     debug_println!("\nBegin Async RISCV Page Map Test");
@@ -242,7 +242,7 @@ async fn test_async_riscv_page_section(obj_allocator: &Mutex<ObjectAllocator>) {
         vspace.cptr(), 
         vaddr, 
         CapRights::read_write().into_inner().0.inner()[0] as usize, 
-        VMAttributes::default().into_inner() as usize
+        VmAttributes::default().into_inner() as usize
     ).await;
 
     debug_println!("\nWrite and Read Data to show the map result:");
@@ -261,10 +261,10 @@ fn test_sync_riscv_page_unmap(obj_allocator: &Mutex<ObjectAllocator>) {
     let l2_pagetable = obj_allocator.lock().alloc_page_table().unwrap();
     let vspace = sel4::BootInfo::init_thread_vspace();
     let vaddr = 0x200_0000;
-    l2_pagetable.page_table_map(vspace, vaddr, VMAttributes::default());
+    l2_pagetable.page_table_map(vspace, vaddr, VmAttributes::default());
     
     let frame = obj_allocator.lock().alloc_frame().unwrap();
-    frame.frame_map(vspace, vaddr, CapRights::read_write(), VMAttributes::default());
+    frame.frame_map(vspace, vaddr, CapRights::read_write(), VmAttributes::default());
     frame.frame_unmap();
     let data = unsafe {
         &mut *(vaddr as *mut TestData)
@@ -278,10 +278,10 @@ async fn test_async_riscv_page_unmap(obj_allocator: &Mutex<ObjectAllocator>) {
     let l2_pagetable = obj_allocator.lock().alloc_page_table().unwrap();
     let vspace = sel4::BootInfo::init_thread_vspace();
     let vaddr = 0x200_0000;
-    l2_pagetable.page_table_map(vspace, vaddr, VMAttributes::default());
+    l2_pagetable.page_table_map(vspace, vaddr, VmAttributes::default());
     
     let frame = obj_allocator.lock().alloc_frame().unwrap();
-    frame.frame_map(vspace, vaddr, CapRights::read_write(), VMAttributes::default());
+    frame.frame_map(vspace, vaddr, CapRights::read_write(), VmAttributes::default());
     
     // frame.frame_unmap();
     syscall_riscv_page_unmap(frame.cptr()).await;
@@ -299,7 +299,7 @@ const MAX_PAGE_NUM_BITS: usize = 9;
 const MAX_PAGE_NUM: usize = 1 << MAX_PAGE_NUM_BITS;
 const EPOCH: usize = 10;
 
-static mut FRAMES: [LocalCPtr<_4KPage>; MAX_PAGE_NUM] = [LocalCPtr::from_bits(0); MAX_PAGE_NUM];
+static mut FRAMES: [LocalCPtr<_4kPage>; MAX_PAGE_NUM] = [LocalCPtr::from_bits(0); MAX_PAGE_NUM];
 
 fn run_performance_test(is_sync: bool) {
     performance_test_init();
@@ -361,7 +361,7 @@ fn performance_test_init() {
     let page_table = obj_allocator.lock().alloc_page_table().unwrap();
     let vspace = sel4::BootInfo::init_thread_vspace();
     let vaddr = 0x200_0000;
-    page_table.page_table_map(vspace, vaddr, VMAttributes::default());
+    page_table.page_table_map(vspace, vaddr, VmAttributes::default());
 }
 
 fn async_memory_test() {
@@ -383,7 +383,7 @@ fn async_address_test(ptr: usize) {
     }
 }
 
-async fn async_memery_single_test(frame: LocalCPtr<_4KPage>, vaddr: usize) {
+async fn async_memery_single_test(frame: LocalCPtr<_4kPage>, vaddr: usize) {
     let vspace = sel4::BootInfo::init_thread_vspace();
     for i in 0..EPOCH {
         syscall_riscv_page_map(
@@ -391,7 +391,7 @@ async fn async_memery_single_test(frame: LocalCPtr<_4KPage>, vaddr: usize) {
             vspace.cptr(),
             vaddr,
             CapRights::read_write().into_inner().0.inner()[0] as usize,
-            VMAttributes::default().into_inner() as usize
+            VmAttributes::default().into_inner() as usize
         ).await;
         syscall_riscv_page_unmap(frame.cptr()).await;           
     }
@@ -413,7 +413,7 @@ fn sync_memory_test() {
             FRAMES
         }[i];
         for _ in 0..EPOCH {
-            frame.frame_map(vspace, vaddr, CapRights::read_write(), VMAttributes::default());
+            frame.frame_map(vspace, vaddr, CapRights::read_write(), VmAttributes::default());
             frame.frame_unmap();   
         }
         vaddr = vaddr + PAGE_SIZE;

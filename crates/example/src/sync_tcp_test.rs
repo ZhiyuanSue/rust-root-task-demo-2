@@ -6,9 +6,9 @@ use alloc::boxed::Box;
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;
 use alloc::{sync::Arc, vec};
-use sel4::cap_type::{IRQHandler, TCB};
+use sel4::cap_type::{IrqHandler, Tcb};
 use sel4::{with_ipc_buffer_mut, MessageInfo};
-use sel4::{cap_type::Endpoint, with_ipc_buffer, BootInfo, CPtr, IPCBuffer, LocalCPtr, r#yield, get_clock};
+use sel4::{cap_type::Endpoint, with_ipc_buffer, BootInfo, CPtr, IpcBuffer, LocalCPtr, r#yield, get_clock};
 use sel4_root_task::{debug_print, debug_println};
 use smoltcp::iface::SocketHandle;
 use smoltcp::socket::tcp::{Socket, SocketBuffer};
@@ -20,7 +20,7 @@ use crate::{
     net::{
         sync_recv, sync_listen, sync_send, MessageType, TCP_RX_BUF_LEN, TCP_TX_BUF_LEN
     }, 
-    object_allocator::GLOBAL_OBJ_ALLOCATOR
+    object_allocator::GLOBAL_OBJ_ALLOCATOR, init_thread
 };
 
 struct RecvBlockedTask {
@@ -36,7 +36,7 @@ lazy_static::lazy_static! {
 
 struct SyncArgs {
     ep: CPtr,
-    tcb: Option<LocalCPtr<TCB>>,
+    tcb: Option<LocalCPtr<Tcb>>,
 }
 
 impl SyncArgs {
@@ -63,7 +63,7 @@ static THREAD_NUM: usize = 1 << THREDA_NUM_BITS;
 static mut COMPLETE_CNT: u8 = 0u8;
 
 #[inline]
-fn net_interrupt_handler(handler: LocalCPtr<IRQHandler>) {
+fn net_interrupt_handler(handler: LocalCPtr<IrqHandler>) {
     iface_poll(true);
     crate::device::interrupt_handler();
     handler.irq_handler_ack();
@@ -294,7 +294,7 @@ fn tcp_server(args: usize, ipc_buffer_addr: usize) {
     let ep = LocalCPtr::<Endpoint>::from_cptr(arg.ep);
     let ipc_buffer = ipc_buffer_addr as *mut sel4::sys::seL4_IPCBuffer;
     let ipcbuf = unsafe {
-        IPCBuffer::from_ptr(ipc_buffer)
+        IpcBuffer::from_ptr(ipc_buffer)
     };
     sel4::set_ipc_buffer(ipcbuf);
     let thread = arg.tcb.unwrap();
