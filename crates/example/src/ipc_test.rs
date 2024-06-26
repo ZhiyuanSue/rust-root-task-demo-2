@@ -164,7 +164,7 @@ pub fn async_ipc_test(_bootinfo: &sel4::BootInfo) -> sel4::Result<!>  {
         badge,
     )?;
 
-    let recv_tcb = sel4::BootInfo::init_thread_tcb();
+    let recv_tcb = sel4::init_thread::slot::TCB;
     recv_tcb.tcb_bind_notification(unbadged_notification)?;
     register_receiver(recv_tcb, unbadged_notification, uintr_handler as usize)?;
 
@@ -200,8 +200,7 @@ pub fn async_ipc_test(_bootinfo: &sel4::BootInfo) -> sel4::Result<!>  {
         unsafe { UINT_TRIGGER });
     mutex_print(uintr_trigger_info);
 
-    sel4::BootInfo::init_thread_tcb().tcb_suspend()?;
-    unreachable!()
+    sel4::init_thread::suspend_self()
 }
 
 

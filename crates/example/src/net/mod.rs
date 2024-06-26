@@ -54,7 +54,7 @@ pub static ADDR_2_CID: Lazy<Arc<Mutex<BTreeMap<IpEndpoint, CoroutineId>>>> =
 pub fn init() -> (LocalCPtr<Notification>, LocalCPtr<IRQHandler>){
     runtime_init();
     let (net_handler, net_ntfn) = init_net_interrupt_handler();
-    let tcb = sel4::BootInfo::init_thread_tcb();
+    let tcb = sel4::init_thread::slot::TCB.cap();
     tcb.tcb_bind_notification(net_ntfn).unwrap();
     register_receiver(tcb, net_ntfn, uintr_handler as usize).unwrap();
 

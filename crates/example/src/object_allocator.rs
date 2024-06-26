@@ -274,7 +274,7 @@ impl ObjectAllocator {
             let ep = eps[i];
             let ipc_buffer = LocalCPtr::<sel4::cap_type::_4KPage>::from_bits(ipc_buffer_cap);
             tcb.tcb_configure(ep.cptr(), cnode, CNodeCapData::new(0, 0), vspace, ipc_buffer_addr as u64, ipc_buffer).unwrap();
-            tcb.tcb_set_sched_params(sel4::BootInfo::init_thread_tcb(), prio as u64, prio as u64).unwrap();
+            tcb.tcb_set_sched_params(sel4::init_thread::slot::TCB.cap(), prio as u64, prio as u64).unwrap();
             let mut user_context = tcb.tcb_read_registers(false, (core::mem::size_of::<UserContext>() / sel4::WORD_SIZE) as u64).unwrap();
 
             let new_stack_layout = Layout::from_size_align(4096 * 64, 4096).expect("Failed to create layout for page aligned memory allocation");
@@ -333,7 +333,7 @@ impl ObjectAllocator {
         let vspace = sel4::BootInfo::init_thread_vspace();
         let ipc_buffer = LocalCPtr::<sel4::cap_type::_4KPage>::from_bits(ipc_buffer_cap);
         tcb.tcb_configure(ep.cptr(), cnode, CNodeCapData::new(0, 0), vspace, ipc_buffer_addr as u64, ipc_buffer)?;
-        tcb.tcb_set_sched_params(sel4::BootInfo::init_thread_tcb(), prio as u64, prio as u64)?;
+        tcb.tcb_set_sched_params(sel4::init_thread::slot::TCB.cap(), prio as u64, prio as u64)?;
         let mut user_context = tcb.tcb_read_registers(false, (core::mem::size_of::<UserContext>() / sel4::WORD_SIZE) as u64)?;
 
         let new_stack_layout = Layout::from_size_align(4096 * 256, 4096).expect("Failed to create layout for page aligned memory allocation");

@@ -60,7 +60,7 @@ pub fn async_syscall_test(bootinfo: &sel4::BootInfo) -> sel4::Result<!> {
         badge,
     ).unwrap();
 
-    let recv_tcb = sel4::BootInfo::init_thread_tcb();
+    let recv_tcb = sel4::init_thread::slot::TCB.cap();
     recv_tcb.tcb_bind_notification(unbadged_reply_ntfn)?;
     register_receiver(recv_tcb, unbadged_reply_ntfn, uintr_handler as usize)?;
 
@@ -94,8 +94,7 @@ pub fn async_syscall_test(bootinfo: &sel4::BootInfo) -> sel4::Result<!> {
     debug_println!("Uintr: {:?}, submit syscall cnt: {:?}", unsafe {
         UINT_TRIGGER
     }, unsafe { SUBMIT_SYSCALL_CNT });
-    sel4::BootInfo::init_thread_tcb().tcb_suspend()?;
-    unreachable!()
+    sel4::init_thread::suspend_self()
 }
 
 

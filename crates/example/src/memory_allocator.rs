@@ -230,7 +230,7 @@ impl SyncMemoryAllocator {
         }
         // 申请页表
         let page_table = obj_allocator.lock().alloc_page_table().unwrap();
-        let vspace = sel4::BootInfo::init_thread_vspace();
+        let vspace = sel4::init_thread::slot::VSPACE.cap();
         let vaddr = 0x200_0000;
         page_table.page_table_map(vspace, vaddr, VMAttributes::default());
     }
@@ -241,7 +241,7 @@ impl SyncMemoryAllocator {
             // 分配slot并映射
             if let Some(slot) = self.alloc_slot() {
                 let frame = self.frames[slot];
-                let vspace = sel4::BootInfo::init_thread_vspace();
+                let vspace = sel4::init_thread::slot::VSPACE.cap();
                 frame.frame_map(vspace, vaddr, CapRights::read_write(), VMAttributes::default());
                 self.mapped_vaddrs[slot] = vaddr;
             } else {

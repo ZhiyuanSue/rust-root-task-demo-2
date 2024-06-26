@@ -61,7 +61,7 @@ fn create_c_s_ipc_channel(ntfn: LocalCPtr<Notification>) {
     let cid = coroutine_spawn_with_prio(Box::pin(nw_recv_req_coroutine(async_args.get_ptr())), 1);
     let badge = register_recv_cid(&cid).unwrap() as u64;
     assert_eq!(badge, 0);
-    let cnode = BootInfo::init_thread_cnode();
+    let cnode = init_thread::slot::CNODE.cap();
     cnode.relative(badged_notification).mint(
         &cnode.relative(ntfn),
         sel4::CapRights::write_only(),
@@ -97,7 +97,7 @@ fn tcp_server_thread(arg: usize, ipc_buffer_addr: usize) {
         GLOBAL_OBJ_ALLOCATOR.lock().get_empty_slot(),
     );
 
-    let cnode = BootInfo::init_thread_cnode();
+    let cnode = init_thread::slot::CNODE.cap();
     cnode.relative(badged_reply_notification).mint(
         &cnode.relative(reply_ntfn),
         sel4::CapRights::write_only(),

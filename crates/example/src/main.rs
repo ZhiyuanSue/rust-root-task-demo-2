@@ -84,7 +84,7 @@ fn main(bootinfo: &sel4::BootInfo) -> sel4::Result<!> {
     LOGGER.set().unwrap();
     heap::init_heap();
     expand_tls();
-    let recv_tcb = sel4::BootInfo::init_thread_tcb();
+    let recv_tcb = sel4::init_thread::slot::TCB.cap();
     recv_tcb.tcb_set_affinity(1);
     image_utils::UserImageUtils.init(bootinfo);
     GLOBAL_OBJ_ALLOCATOR.lock().init(bootinfo);
@@ -94,6 +94,6 @@ fn main(bootinfo: &sel4::BootInfo) -> sel4::Result<!> {
     async_syscall_test(bootinfo)?;
     debug_println!("TEST_PASS");
 
-    sel4::BootInfo::init_thread_tcb().tcb_suspend()?;
+    sel4::init_thread::slot::TCB.cap().tcb_suspend().unwrap();
     unreachable!()
 }

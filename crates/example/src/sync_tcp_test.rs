@@ -118,8 +118,7 @@ pub fn net_stack_test(boot_info: &BootInfo) -> sel4::Result<!> {
         recv_blocked_tasks.retain(|task| task.complete == false);
     }
 
-    sel4::BootInfo::init_thread_tcb().tcb_suspend()?;
-    unreachable!()
+    sel4::init_thread::suspend_self()
 }
 
 fn process_blocked_task(task: &mut RecvBlockedTask) {
@@ -253,7 +252,7 @@ fn process_req(ep: LocalCPtr<Endpoint>) {
 
 fn create_c_s_ipc_channel(thread_num_bits: usize) -> Vec<LocalCPtr<Endpoint>> {
     let thread_num = 1 << thread_num_bits;
-    let cnode = BootInfo::init_thread_cnode();
+    let cnode = init_thread::slot::TCB.cap();
     let mut eps = GLOBAL_OBJ_ALLOCATOR.lock().alloc_many_ep(thread_num_bits);
     let mut args = Vec::new();
     for i in 0..thread_num {
