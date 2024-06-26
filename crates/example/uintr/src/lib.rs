@@ -35,7 +35,7 @@ pub unsafe fn uipi_send(index: u64) {
     core::arch::asm!(".insn r 0b1111011, 0b110, 0b0000000, x0, {}, x0", in(reg) index);
 }
 pub unsafe fn uipi_read() -> usize {
-    let mut ret: usize = 0;
+    let mut ret: usize;
     core::arch::asm!(".insn r 0b1111011, 0b110, 0b0000001, {}, x0, x0", out(reg) ret);
     ret
 }
@@ -52,7 +52,7 @@ pub unsafe fn uipi_write(bits: usize) {
 //     core::arch::asm!(".insn i 0b1111011, 0b010, x0, x0, 0x4");
 // }
 
-pub struct uintr_frame {
+pub struct UintrFrame {
     ra: u64, sp: u64, gp: u64, tp: u64,
     t0: u64, t1: u64, t2: u64, s0: u64,
     s1: u64, a0: u64, a1: u64, a2: u64,
@@ -71,20 +71,20 @@ unsafe fn clear_csr_uip(bits: usize) {
 }
 
 #[no_mangle]
-pub unsafe fn __handler_entry(frame: *mut uintr_frame, handler: u64) {
+pub unsafe fn __handler_entry(frame: *mut UintrFrame, handler: u64) {
     // sel4::debug_println!("__handler_entry enter");
     let irqs = uipi_read();
     // sel4::debug_println!("__handler_entry enter2");
     clear_csr_uip(MIE_USIE);
     // uip::clear_usoft();
-    let handler_func: fn(*mut uintr_frame, usize) -> usize = core::mem::transmute(handler);
+    let handler_func: fn(*mut UintrFrame, usize) -> usize = core::mem::transmute(handler);
     // sel4::debug_println!("__handler_entry enter3");
     let irqs = handler_func(frame, irqs);
     // sel4::debug_println!("__handler_entry enter4: {}", irqs);
     uipi_write(irqs);
 }
 
-pub fn register_receiver(tcb: cap::Tcb, _ntfn: cap::Notification, _handler: usize) -> Result<(), Error> {
+pub fn register_receiver(_tcb: cap::Tcb, _ntfn: cap::Notification, _handler: usize) -> Result<(), Error> {
     // extern "C" {
     //     fn uintrvec();
     // }
@@ -94,7 +94,7 @@ pub fn register_receiver(tcb: cap::Tcb, _ntfn: cap::Notification, _handler: usiz
     //     core::arch::asm!(concat!("csrs ", "0x000", ", {0}"), in(reg) USTATUS_UIE);
     //     core::arch::asm!(concat!("csrs ", "0x004", ", {0}"), in(reg) MIE_USIE);
     // }
-    // return _ntfn.register_receiver(tcb.cptr());
+    // return _ntfn.register_receiver(_tcb.cptr());
 	Ok(())
 }
 

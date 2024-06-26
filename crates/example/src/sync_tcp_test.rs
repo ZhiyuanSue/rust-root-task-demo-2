@@ -80,7 +80,7 @@ pub fn net_stack_test(boot_info: &BootInfo) -> sel4::Result<!> {
     loop {
         let mut listen_cnt = 0;
         for ep in eps.iter() {
-            let (msg, badge) = ep.nb_recv(());
+            let (_msg, badge) = ep.nb_recv(());
             if badge != 0 {
                 if badge == 1 {
                     net_interrupt_handler(handler);
@@ -96,14 +96,14 @@ pub fn net_stack_test(boot_info: &BootInfo) -> sel4::Result<!> {
     }
 
     loop {
-        let (msg, badge) = ntfn.wait();
+        let (_msg, badge) = ntfn.wait();
 		// the poll used the sel4_poll, and the sel4_poll is the same as the sel4_wait in the sel4 comment, so just use wait
         if badge == 1 {
             net_interrupt_handler(handler);
         }
         let eps = POLL_EPS.lock();
         for ep in eps.iter() {
-            let (msg, badge) = ep.nb_recv(());
+            let (_msg, badge) = ep.nb_recv(());
             if badge != 0 {
                 if badge == 1 {
                     net_interrupt_handler(handler);

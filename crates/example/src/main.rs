@@ -65,7 +65,7 @@ fn expand_tls() {
     };
 
     let ipc_buffer_ptr = with_ipc_buffer(|buffer| {
-        buffer
+        buffer.ptr() as *mut sel4::sys::seL4_IPCBuffer
     });
 
     unsafe {
@@ -73,7 +73,7 @@ fn expand_tls() {
     }
 
     let ipcbuf = unsafe {
-        Box::new(ipc_buffer_ptr).as_mut()
+        IpcBuffer::from_ptr(ipc_buffer_ptr)
     };
     sel4::set_ipc_buffer(ipcbuf);
 }

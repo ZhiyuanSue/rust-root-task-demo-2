@@ -12,7 +12,7 @@ use sel4::sys::invocation_label;
 use sel4::ObjectBlueprint;
 // use sel4::get_clock;
 // use sel4::wake_syscall_handler;
-use uintr::{register_sender, uintr_frame, uipi_send};
+use uintr::{register_sender, UintrFrame, uipi_send};
 
 use crate::image_utils::UserImageUtils;
 
@@ -251,7 +251,7 @@ pub async fn recv_reply_coroutine_async_syscall(new_buffer_ptr: usize, reply_num
 }
 
 
-pub fn uintr_handler(_frame: *mut uintr_frame, irqs: usize) -> usize {
+pub fn uintr_handler(_frame: *mut UintrFrame, irqs: usize) -> usize {
     unsafe {
         UINT_TRIGGER += 1;
     }

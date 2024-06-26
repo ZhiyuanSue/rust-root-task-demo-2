@@ -2,7 +2,6 @@ use core::sync::atomic::AtomicBool;
 use crate::coroutine::CoroutineId;
 use crate::utils::SafeRingBuffer;
 // use sel4::get_clock;
-use crate::utils::RingBuffer;
 
 pub const MAX_ITEM_NUM: usize = 4096;
 pub const MAX_IPC_MSG_LEN: usize = 16;

@@ -1,6 +1,5 @@
 
 use core::sync::atomic::AtomicUsize;
-use sel4::debug_println;
 // use sel4::get_clock;
 
 #[derive(Copy, Clone)]
@@ -248,7 +247,7 @@ impl<T, const SIZE: usize> SafeRingBuffer<T, SIZE> where T: Default + Copy + Clo
 
     #[inline]
     pub fn push_safe(&mut self, item: &T) -> Result<(), ()> {
-        let cnt = self.count.load(core::sync::atomic::Ordering::Relaxed);
+        // let cnt = self.count.load(core::sync::atomic::Ordering::Relaxed);
         // debug_println!("push cnt: {}, SIZE: {}", cnt, SIZE);
         if !(self.count.load(core::sync::atomic::Ordering::SeqCst) == SIZE) {
             // debug_println!("push cnt: {}, SIZE: {}", cnt, SIZE);

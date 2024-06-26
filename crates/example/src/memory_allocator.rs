@@ -179,7 +179,7 @@ pub struct SyncMemoryAllocator {
 impl SyncMemoryAllocator {
 
     pub fn new() -> Self {
-        let mut allocator = SyncMemoryAllocator{
+        let allocator = SyncMemoryAllocator{
             current: 0,
             recycled: Vec::<usize>::new(),
             frames: [Cap::from_bits(0); MAX_PAGE_NUM],
