@@ -13,7 +13,6 @@ use sel4_root_task::debug_println;
 use sel4::cap_type::{Untyped, MegaPage};
 use sel4::{FrameObjectType, ObjectBlueprint, ObjectBlueprintArch, VmAttributes, CapRights};
 use sel4::get_clock;
-use sel4::sel4_capdl_initializer_core::Initializer;
 use smoltcp::iface::SocketSet;
 use smoltcp::phy::{Device, DeviceCapabilities, Medium, RxToken, TxToken};
 use smoltcp::time::Instant;
@@ -290,7 +289,7 @@ fn init_mmio(boot_info: &BootInfo) {
     net_untyped.untyped_retype(
         &bluprint,
         &cnode.relative_self(),
-        net_untyped_slot,
+        net_untyped_slot.index(),
         retype_num
     ).unwrap();
 
@@ -309,11 +308,11 @@ fn init_mmio(boot_info: &BootInfo) {
         net_frame_untyped.untyped_retype(
             &bluprint,
             &cnode.relative_self(),
-            net_frame_slot + i,
+            net_frame_slot.index() + i,
             1
         ).unwrap();
         let _ = obj_allocator.lock().get_empty_slot();
-        let net_frame = Initializer::bootinfo.untyped().index(i).cap();
+        let net_frame = boot_info.untyped().index(i).cap();
         let paddr = net_frame.frame_get_address().unwrap();
         debug_println!("paddr: {:#x}", paddr);
         if paddr <= DMA_ADDRESS && paddr + (1 << FrameObjectType::MEGA_PAGE_BITS) > ETH_ADDRESS {

@@ -181,7 +181,7 @@ fn init_mmio(boot_info: &BootInfo) {
     virtio_untyped.untyped_retype(
         &bluprint,
         &cnode.relative_self(),
-        virtio_untyped_slot,
+        virtio_untyped_slot.index(),
         retype_num
     ).unwrap();
 
@@ -200,7 +200,7 @@ fn init_mmio(boot_info: &BootInfo) {
         virtio_frame_untyped.untyped_retype(
             &bluprint,
             &cnode.relative_self(),
-            virtio_frame_slot + i,
+            virtio_frame_slot.index() + i,
             1
         ).unwrap();
         let _ = obj_allocator.lock().get_empty_slot();

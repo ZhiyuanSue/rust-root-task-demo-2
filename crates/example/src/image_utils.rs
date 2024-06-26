@@ -1,6 +1,6 @@
 use core::ops::Range;
 use core::ptr;
-use sel4::{InitCSpaceSlot, Cap};
+use sel4::{init_thread::Slot, Cap};
 use sel4_root_task::debug_println;
 
 use crate::heap::HEAP_MEM;
@@ -19,7 +19,7 @@ impl UserImageUtils {
             HEAP_P_V_OFFSET = paddr_start - HEAP_MEM.as_ptr() as usize;
         }
     }
-    pub fn get_user_image_frame_slot(&self, vaddr: usize) -> InitCSpaceSlot {
+    pub fn get_user_image_frame_slot(&self, vaddr: usize) -> Slot {
         assert_eq!(vaddr % GRANULE_SIZE, 0);
         let user_image_footprint = get_user_image_footprint();
         let bootinfo = unsafe {
@@ -28,13 +28,13 @@ impl UserImageUtils {
         let num_user_frames = bootinfo.user_image_frames().len();
         assert_eq!(user_image_footprint.len(), num_user_frames * GRANULE_SIZE);
         let ix = (vaddr - user_image_footprint.start) / GRANULE_SIZE;
-        bootinfo.user_image_frames().start() + ix
+        Slot::from_index(bootinfo.user_image_frames().start() + ix)
     }
 
     pub fn get_user_image_frame_paddr(&self, vaddr: usize) -> usize {
         let offset = vaddr % 4096;
         let new_vaddr = vaddr - offset;
-        let frame_cap = self.get_user_image_frame_slot(new_vaddr);
+        let frame_cap = self.get_user_image_frame_slot(new_vaddr).index();
         let frame = Cap::<sel4::cap_type::_4kPage>::from_bits(frame_cap as u64);
         frame.frame_get_address().unwrap() + offset
     }

@@ -66,7 +66,7 @@ pub fn async_syscall_test(bootinfo: &sel4::BootInfo) -> sel4::Result<!> {
     register_receiver(recv_tcb, unbadged_reply_ntfn, uintr_handler as usize)?;
 
     register_async_syscall_buffer(new_buffer_ptr);
-    let new_buffer_cap = CPtr::from_bits(UserImageUtils.get_user_image_frame_slot(new_buffer_ptr) as u64);
+    let new_buffer_cap = CPtr::from_bits(UserImageUtils.get_user_image_frame_slot(new_buffer_ptr).index() as u64);
     // debug_println!("async_syscall_test: new_buffer_cap: {}, new_buffer_ptr: {:#x}", new_buffer_cap.bits(), new_buffer_ptr);
     badged_reply_ntfn.register_async_syscall(new_buffer_cap)?;
     
@@ -137,7 +137,7 @@ async fn test_async_notification_section(obj_allocator: &Mutex<ObjectAllocator>)
         dst.root().cptr(), 
         dst.path().bits() as usize, 
         dst.path().depth().try_into().unwrap(), 
-        slot, 
+        slot.index(), 
         1).await;
     let notification  = slot.cap();
 	// let notification  = sel4::BootInfo::init_cspace_local_cptr::<sel4::cap_type::Notification>(
@@ -205,7 +205,7 @@ async fn test_async_riscv_page_section(obj_allocator: &Mutex<ObjectAllocator>) {
         dst.root().cptr(), 
         dst.path().bits() as usize, 
         dst.path().depth().try_into().unwrap(), 
-        pt_slot, 
+        pt_slot.index(), 
         1).await;
     let page_table = pt_slot.cap();
 	// let page_table = sel4::BootInfo::init_cspace_local_cptr::<sel4::cap_type::_4kPage>(
@@ -233,7 +233,7 @@ async fn test_async_riscv_page_section(obj_allocator: &Mutex<ObjectAllocator>) {
         dst.root().cptr(), 
         dst.path().bits() as usize, 
         dst.path().depth().try_into().unwrap(), 
-        frame_slot, 
+        frame_slot.index(), 
         1).await;
     let frame = frame_slot.cap();
 	// let frame = sel4::BootInfo::init_cspace_local_cptr::<sel4::cap_type::_4kPage>(
@@ -389,7 +389,7 @@ fn async_address_test(ptr: usize) {
 
 async fn async_memery_single_test(frame: Cap<_4kPage>, vaddr: usize) {
     let vspace = sel4::init_thread::slot::VSPACE.cap();
-    for i in 0..EPOCH {
+    for _i in 0..EPOCH {
         syscall_riscv_page_map(
             frame.cptr(),
             vspace.cptr(),
@@ -402,7 +402,7 @@ async fn async_memery_single_test(frame: Cap<_4kPage>, vaddr: usize) {
 }
 
 async fn async_address_single_test(vaddr: usize) {
-    for i in 0..EPOCH {
+    for _i in 0..EPOCH {
         syscall_riscv_page_get_address(vaddr).await;        
         syscall_riscv_page_get_address(vaddr).await;        
     }

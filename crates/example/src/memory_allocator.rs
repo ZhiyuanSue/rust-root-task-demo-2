@@ -89,7 +89,7 @@ impl AsyncMemoryAllocator {
                 dst.root().cptr(), 
                 dst.path().bits() as usize, 
                 dst.path().depth().try_into().unwrap(), 
-                slot, 
+                slot.index(), 
                 1).await;
             let frame = slot.cap();
 			// let frame = sel4::BootInfo::init_cspace_local_cptr::<sel4::cap_type::_4kPage>(
@@ -108,7 +108,7 @@ impl AsyncMemoryAllocator {
             dst.root().cptr(), 
             dst.path().bits() as usize, 
             dst.path().depth().try_into().unwrap(), 
-            pt_slot, 
+            pt_slot.index(), 
             1).await;
         let page_table = pt_slot.cap();
 		// let page_table = sel4::BootInfo::init_cspace_local_cptr::<sel4::cap_type::_4kPage>(

@@ -1,11 +1,12 @@
 use alloc::alloc::alloc_zeroed;
 use alloc::vec::{self, Vec};
+use sel4::init_thread::SlotRegion;
 use core::alloc::Layout;
 use core::arch::asm;
 use core::borrow::BorrowMut;
 use core::ops::Range;
 use spin::Mutex;
-use sel4::{CNodeCapData, InitCSpaceSlot, Cap, UntypedDesc};
+use sel4::{CNodeCapData, init_thread::Slot, Cap, UntypedDesc};
 use sel4::cap_type::Untyped;
 use sel4::ObjectBlueprintArch;
 use sel4::UserContext;
@@ -25,8 +26,8 @@ struct UsedUntypedDesc {
 
 pub struct ObjectAllocator {
     untyped_list: Vec<UsedUntypedDesc>,
-    untyped_start: InitCSpaceSlot,
-    empty: Range<InitCSpaceSlot>,
+    untyped_start: Slot,
+    empty: Region<Slot>,
 }
 
 #[warn(dead_code)]
@@ -42,7 +43,7 @@ impl ObjectAllocator {
         }
         Self {
             untyped_list,
-            untyped_start: bootinfo.untyped().start(),
+            untyped_start: Slot::from_index(bootinfo.untyped().start()),
             empty: bootinfo.empty()
         }
     }
@@ -50,7 +51,7 @@ impl ObjectAllocator {
     pub const fn default() -> Self {
         Self {
             untyped_list: Vec::new(),
-            untyped_start: 0,
+            untyped_start: Slot::from_index(0),
             empty: Range { start: 0, end: 0},
         }
     }
@@ -66,7 +67,7 @@ impl ObjectAllocator {
             })
         }
         self.untyped_list = untyped_list;
-        self.untyped_start = bootinfo.untyped().start();
+        self.untyped_start = Slot::from_index(bootinfo.untyped().start());
         self.empty = bootinfo.empty();
     }
 
@@ -83,14 +84,14 @@ impl ObjectAllocator {
             //     self.untyped_list[idx].size_bits());
             // self.untyped_list.remove(idx);
             self.untyped_list[idx].used = true;
-            let slot = self.untyped_start + idx;
+            let slot = Slot::from_index(self.untyped_start.index() + idx);
             slot.cap()
 			// sel4::BootInfo::init_cspace_local_cptr::<Untyped>(slot)
         }
     }
 
     #[inline]
-    pub fn get_empty_slot(&mut self) -> InitCSpaceSlot {
+    pub fn get_empty_slot(&mut self) -> Slot {
         self.empty.next().unwrap()
     }
 
@@ -149,7 +150,7 @@ impl ObjectAllocator {
             cnt
         ).unwrap();
         for i in 0..cnt {
-            ans.push(i.cap())
+            ans.push(sel4::init_thread::Slot::from_index(i).cap())
 			// ans.push(sel4::BootInfo::init_cspace_local_cptr::<sel4::cap_type::Endpoint>(slot + i))
         };
         return ans;
@@ -184,7 +185,7 @@ impl ObjectAllocator {
         for _ in 1..cnt {
             self.empty.next().unwrap();
         }
-        let cnode = sel4::init_thread::slot::CNODE.cap();
+        let cnode: Cap<sel4::cap_type::CNode> = sel4::init_thread::slot::CNODE.cap();
         let frame_blueprint = sel4::ObjectBlueprint::Arch(ObjectBlueprintArch::_4kPage);
         untyped.untyped_retype(
             &frame_blueprint,
@@ -193,7 +194,7 @@ impl ObjectAllocator {
             cnt
         ).unwrap();
         for i in 0..cnt {
-            ans.push(i.cap())
+            ans.push(sel4::init_thread::Slot::from_index(i).cap())
 			// ans.push(sel4::BootInfo::init_cspace_local_cptr::<sel4::cap_type::_4kPage>(slot + i))
         };
         return ans;
@@ -237,7 +238,7 @@ impl ObjectAllocator {
             cnt
         ).unwrap();
         for i in 0..cnt {
-            ans.push(i.cap())
+            ans.push(sel4::init_thread::Slot::from_index(i).cap())
 			// ans.push(sel4::BootInfo::init_cspace_local_cptr::<sel4::cap_type::Tcb>(slot + i))
         };
         return ans;
@@ -278,7 +279,7 @@ impl ObjectAllocator {
                 }
                 ptr as usize
             };
-            let ipc_buffer_cap = UserImageUtils.get_user_image_frame_slot(ipc_buffer_addr) as u64;
+            let ipc_buffer_cap = UserImageUtils.get_user_image_frame_slot(ipc_buffer_addr).index() as u64;
             let tcb = tcbs[i];
             let ep = eps[i];
             let ipc_buffer = Cap::<sel4::cap_type::_4kPage>::from_bits(ipc_buffer_cap);
@@ -335,7 +336,7 @@ impl ObjectAllocator {
             }
             ptr as usize
         };
-        let ipc_buffer_cap = UserImageUtils.get_user_image_frame_slot(ipc_buffer_addr) as u64;
+        let ipc_buffer_cap = UserImageUtils.get_user_image_frame_slot(ipc_buffer_addr).index() as u64;
         let tcb = self.alloc_tcb()?;
         let ep = self.alloc_ep()?;
         let cnode = sel4::init_thread::slot::CNODE.cap();
