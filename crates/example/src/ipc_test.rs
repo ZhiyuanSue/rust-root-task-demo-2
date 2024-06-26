@@ -4,6 +4,7 @@ use alloc::sync::Arc;
 use alloc::{format, string::String};
 use spin::Mutex;
 use core::alloc::Layout;
+use core::ptr;
 use core::mem::{self, size_of};
 use core::sync::atomic::AtomicUsize;
 use core::sync::atomic::Ordering::SeqCst;
@@ -32,7 +33,7 @@ pub fn mutex_print(s: String) {
 pub fn async_helper_thread(arg: usize, ipc_buffer_addr: usize) {
     let ipc_buffer = ipc_buffer_addr as *mut sel4::sys::seL4_IPCBuffer;
     let ipcbuf = unsafe {
-        IpcBuffer::from_ptr(ipc_buffer)
+        &mut sel4::IpcBuffer(ipc_buffer)
     };
     sel4::set_ipc_buffer(ipcbuf);
     runtime_init();
@@ -118,7 +119,7 @@ async fn recv_req_coroutine(arg: usize) {
     let async_args= AsyncArgs::from_ptr(arg);
     let new_buffer = async_args.ipc_new_buffer.as_mut().unwrap();
     loop {
-        if let Some(mut item) = new_buffer.req_items.get_first_item() {
+        if let Some(item) = new_buffer.req_items.get_first_item() {
             // item.msg_info += 1;
             // debug_println!("hello get item");
             matrix_test::<MATRIX_SIZE>();
@@ -208,7 +209,7 @@ fn sync_helper_thread(ep_bits: usize, ipc_buffer_addr: usize) {
     debug_println!("hello sync_helper_thread");
     let ipc_buffer = ipc_buffer_addr as *mut sel4::sys::seL4_IPCBuffer;
     let ipcbuf = unsafe {
-        IpcBuffer::from_ptr(ipc_buffer)
+        &mut sel4::IpcBuffer(ipc_buffer)
     };
     sel4::set_ipc_buffer(ipcbuf);
     let ep = Cap::<Endpoint>::from_bits(ep_bits as u64);

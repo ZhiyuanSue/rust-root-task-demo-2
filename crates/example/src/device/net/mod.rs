@@ -5,7 +5,7 @@ use smoltcp::iface::{Config, Interface};
 use smoltcp::time::Instant;
 use smoltcp::wire::EthernetAddress;
 use spin::{Lazy, Mutex};
-use sel4::{BootInfo, LocalCPtr, init_thread};
+use sel4::{BootInfo, Cap, init_thread};
 use sel4::cap_type::{IrqHandler, Notification};
 use crate::device::net::virtio_net::get_net_device;
 use crate::object_allocator::GLOBAL_OBJ_ALLOCATOR;
@@ -32,7 +32,7 @@ pub static INTERFACE: Lazy<Arc<Mutex<Interface>>> = Lazy::new(|| Arc::new(Mutex:
     )
 )));
 
-pub fn init_net_interrupt_handler() -> (LocalCPtr<IrqHandler>, LocalCPtr<Notification>) {
+pub fn init_net_interrupt_handler() -> (Cap<IrqHandler>, Cap<Notification>) {
     let obj_allocator = &GLOBAL_OBJ_ALLOCATOR;
     let irq_ctrl = init_thread::slot::IRQ_CONTROL.cap();
     let irq_handler = BootInfo::init_cspace_local_cptr::<IrqHandler>(obj_allocator.lock().get_empty_slot());

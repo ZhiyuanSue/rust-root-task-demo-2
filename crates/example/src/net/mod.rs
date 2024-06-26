@@ -17,7 +17,7 @@ use smoltcp::time::Instant;
 use spin::{Lazy, Mutex};
 use async_runtime::{coroutine_get_current, coroutine_spawn_with_prio, coroutine_wake, get_ready_num, runtime_init, CoroutineId, IPCItem};
 use sel4::cap_type::{Endpoint, IrqHandler, Notification};
-use sel4::LocalCPtr;
+use sel4::Cap;
 
 use sel4_root_task::debug_println;
 use uintr::{register_receiver, uipi_send};
@@ -39,7 +39,7 @@ pub const TCP_RX_BUF_LEN: usize = 8 * 4096;
 static mut NET_STACK_MAP: BTreeMap<SocketHandle, SenderID> = BTreeMap::new();
 
 #[thread_local]
-static mut NET_STACK_MAP2: BTreeMap<SocketHandle, LocalCPtr<Endpoint>> = BTreeMap::new();
+static mut NET_STACK_MAP2: BTreeMap<SocketHandle, Cap<Endpoint>> = BTreeMap::new();
 
 pub static SOCKET_SET: Lazy<Arc<Mutex<SocketSet>>> =
     Lazy::new(|| Arc::new(Mutex::new(SocketSet::new(vec![]))));
@@ -51,7 +51,7 @@ pub static SOCKET_2_CID: Lazy<Arc<Mutex<BTreeMap<SocketHandle, CoroutineId>>>> =
 pub static ADDR_2_CID: Lazy<Arc<Mutex<BTreeMap<IpEndpoint, CoroutineId>>>> =
     Lazy::new(|| Arc::new(Mutex::new(BTreeMap::new())));
 
-pub fn init() -> (LocalCPtr<Notification>, LocalCPtr<IrqHandler>){
+pub fn init() -> (Cap<Notification>, Cap<IrqHandler>){
     runtime_init();
     let (net_handler, net_ntfn) = init_net_interrupt_handler();
     let tcb = sel4::init_thread::slot::TCB.cap();
@@ -126,7 +126,7 @@ async fn poll_timer(mut timeout: u64) {
 
 static mut NET_POLL_CNT: usize = 0;
 static mut NET_POLL_COST: u64 = 0;
-async fn net_poll(handler: LocalCPtr<IrqHandler>) {
+async fn net_poll(handler: Cap<IrqHandler>) {
     // debug_println!("net poll cid: {:?}", coroutine_get_current());
     loop {
         // debug_println!("hello net poll");

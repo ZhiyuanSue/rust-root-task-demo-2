@@ -2,7 +2,7 @@ use alloc::boxed::Box;
 use alloc::collections::VecDeque;
 use alloc::vec::Vec;
 use sel4::cap_type::Endpoint;
-use sel4::{with_ipc_buffer_mut, LocalCPtr, MessageInfo};
+use sel4::{with_ipc_buffer_mut, Cap, MessageInfo};
 use sel4_root_task::debug_println;
 
 
@@ -28,7 +28,7 @@ struct ListenTableEntry {
     listen_endpoint: IpListenEndpoint,
     syn_queue: VecDeque<SocketHandle>,
     block_cids: VecDeque<CoroutineId>,
-    block_ep: VecDeque<LocalCPtr<Endpoint>>,
+    block_ep: VecDeque<Cap<Endpoint>>,
 }
 
 impl ListenTableEntry {
@@ -63,7 +63,7 @@ pub struct ListenTable {
 }
 
 
-pub static POLL_EPS: Mutex<Vec<LocalCPtr<Endpoint>>> = Mutex::new(Vec::new());
+pub static POLL_EPS: Mutex<Vec<Cap<Endpoint>>> = Mutex::new(Vec::new());
 
 impl ListenTable {
     pub fn new() -> Self {
@@ -93,7 +93,7 @@ impl ListenTable {
         Ok(())
     }
 
-    pub fn listen_with_ep(&self, listen_endpoint: IpListenEndpoint, handle: SocketHandle, ep: LocalCPtr<Endpoint>) {
+    pub fn listen_with_ep(&self, listen_endpoint: IpListenEndpoint, handle: SocketHandle, ep: Cap<Endpoint>) {
         let port = listen_endpoint.port;
         assert_ne!(port, 0);
         let mut entry = self.tcp[port as usize].lock();

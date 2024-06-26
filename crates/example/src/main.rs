@@ -73,13 +73,13 @@ fn expand_tls() {
     }
 
     let ipcbuf = unsafe {
-        IpcBuffer::from_ptr(ipc_buffer_ptr)
+        usize::try_from(ipc_buffer_ptr) as *mut sel4::IpcBuffer
     };
     sel4::set_ipc_buffer(ipcbuf);
 }
 
 #[root_task(stack_size = 4096 * 128)]
-fn main(bootinfo: &sel4::BootInfo) -> sel4::Result<!> {
+fn main(bootinfo: &sel4::BootInfoPtr) -> sel4::Result<!> {
     debug_println!("Hello, World!");
     LOGGER.set().unwrap();
     heap::init_heap();

@@ -3,13 +3,13 @@ use alloc::boxed::Box;
 use alloc::string::{String, ToString};
 use alloc::sync::Arc;
 use core::alloc::Layout;
+use core::ptr;
 use core::mem::{forget, size_of};
 use async_runtime::{coroutine_is_empty, coroutine_run_until_blocked, coroutine_run_until_complete, coroutine_spawn_with_prio, runtime_init, NewBuffer};
 use sel4::{BootInfo, CPtr, IpcBuffer, Cap, init_thread};
 use sel4::cap_type::{Endpoint, Notification, Tcb};
 use sel4_root_task::{debug_println, debug_print};
 use sel4::{get_clock, r#yield};
-use sel4_capdl_initializer_core::Initializer;
 use uintr::{register_receiver, register_sender};
 use crate::async_lib::{recv_reply_coroutine, register_recv_cid, register_sender_buffer, uintr_handler, AsyncArgs, SenderID, UINT_TRIGGER};
 use crate::image_utils::UserImageUtils;
@@ -84,7 +84,7 @@ fn create_c_s_ipc_channel(ntfn: Cap<Notification>) {
 fn tcp_server_thread(arg: usize, ipc_buffer_addr: usize) {
     let ipc_buffer = ipc_buffer_addr as *mut sel4::sys::seL4_IPCBuffer;
     let ipcbuf = unsafe {
-        IpcBuffer::from_ptr(ipc_buffer)
+        &mut sel4::IpcBuffer(ipc_buffer)
     };
     sel4::set_ipc_buffer(ipcbuf);
     runtime_init();

@@ -239,7 +239,7 @@ impl ObjectAllocator {
         let blueprint = sel4::ObjectBlueprint::Arch(ObjectBlueprintArch::PageTable);
         let untyped = self.get_the_first_untyped_slot(&blueprint);
         let slot = self.empty.next().unwrap();
-        let cnode = sel4::BootInfo::init_thread_cnode();
+        let cnode = sel4::init_thread::slot::CNODE.cap();
         untyped.untyped_retype(
             &blueprint,
             &cnode.relative_self(),

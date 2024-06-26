@@ -1,6 +1,6 @@
 use alloc::{boxed::Box, vec::Vec};
 use async_runtime::{coroutine_run_until_blocked, coroutine_spawn};
-use sel4::{cap_type::_4kPage, debug_println, get_clock, CapRights, LocalCPtr, ObjectBlueprintArch, VmAttributes};
+use sel4::{cap_type::_4kPage, debug_println, get_clock, CapRights, Cap, ObjectBlueprintArch, VmAttributes};
 use super::async_syscall::*;
 use crate::object_allocator::GLOBAL_OBJ_ALLOCATOR;
 
@@ -27,7 +27,7 @@ impl TestData {
 pub struct AsyncMemoryAllocator {
     current: usize,
     recycled: Vec<usize>,
-    frames: [LocalCPtr<_4kPage>; MAX_PAGE_NUM],
+    frames: [Cap<_4kPage>; MAX_PAGE_NUM],
     mapped_vaddrs: [usize; MAX_PAGE_NUM]
 }
 
@@ -37,7 +37,7 @@ impl AsyncMemoryAllocator {
         let mut allocator = AsyncMemoryAllocator{
             current: 0,
             recycled: Vec::<usize>::new(),
-            frames: [LocalCPtr::from_bits(0); MAX_PAGE_NUM],
+            frames: [Cap::from_bits(0); MAX_PAGE_NUM],
             mapped_vaddrs: [0; MAX_PAGE_NUM]
         };
         allocator
@@ -170,7 +170,7 @@ impl AsyncMemoryAllocator {
 pub struct SyncMemoryAllocator {
     current: usize,
     recycled: Vec<usize>,
-    frames: [LocalCPtr<_4kPage>; MAX_PAGE_NUM],
+    frames: [Cap<_4kPage>; MAX_PAGE_NUM],
     mapped_vaddrs: [usize; MAX_PAGE_NUM]
 }
 
@@ -180,7 +180,7 @@ impl SyncMemoryAllocator {
         let mut allocator = SyncMemoryAllocator{
             current: 0,
             recycled: Vec::<usize>::new(),
-            frames: [LocalCPtr::from_bits(0); MAX_PAGE_NUM],
+            frames: [Cap::from_bits(0); MAX_PAGE_NUM],
             mapped_vaddrs: [0; MAX_PAGE_NUM]
         };
         allocator

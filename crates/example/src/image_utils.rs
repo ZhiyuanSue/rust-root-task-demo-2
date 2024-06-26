@@ -1,6 +1,6 @@
 use core::ops::Range;
 use core::ptr;
-use sel4::{InitCSpaceSlot, Cap, SizedFrameType};
+use sel4::{InitCSpaceSlot, Cap};
 use sel4_root_task::debug_println;
 
 use crate::heap::HEAP_MEM;
@@ -72,4 +72,4 @@ const fn round_down(n: usize, b: usize) -> usize {
     n - n % b
 }
 
-const GRANULE_SIZE: usize = sel4::cap_type::Granule::FRAME_SIZE.bytes();
+const GRANULE_SIZE: usize = sel4::cap_type::Granule::FRAME_OBJECT_TYPE.bytes();

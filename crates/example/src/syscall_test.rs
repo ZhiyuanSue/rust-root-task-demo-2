@@ -7,7 +7,7 @@ use core::alloc::{Layout};
 use core::mem::size_of;
 use alloc::alloc::alloc_zeroed;
 use async_runtime::{coroutine_run_until_blocked, coroutine_spawn, NewBuffer};
-use sel4::{get_clock, CNode, CapRights, LocalCPtr, ObjectBlueprint, ObjectBlueprintArch, VmAttributes, cap};
+use sel4::{get_clock, CNode, CapRights, Cap, ObjectBlueprint, ObjectBlueprintArch, VmAttributes, cap};
 use sel4::CPtr;
 use sel4_root_task::debug_println;
 use crate::async_lib::{AsyncArgs, SUBMIT_SYSCALL_CNT, UINT_TRIGGER};
@@ -123,7 +123,7 @@ async fn test_async_notification_section(obj_allocator: &Mutex<ObjectAllocator>)
     let cnode = sel4::init_thread::slot::CNODE.cap();
     let mut async_args = AsyncArgs::new();
     let target_tcb_bits = obj_allocator.lock().create_thread(test_helper_thread, async_args.get_ptr(), 255, 1, true).unwrap().cptr().bits();
-    let target_tcb: cap::Tcb = LocalCPtr::from_bits(target_tcb_bits);
+    let target_tcb: cap::Tcb = Cap::from_bits(target_tcb_bits);
     // 生成Notification
     let blueprint = sel4::ObjectBlueprint::Notification;
     let untyped = obj_allocator.lock().get_the_first_untyped_slot(&blueprint);
@@ -299,7 +299,7 @@ const MAX_PAGE_NUM_BITS: usize = 9;
 const MAX_PAGE_NUM: usize = 1 << MAX_PAGE_NUM_BITS;
 const EPOCH: usize = 10;
 
-static mut FRAMES: [LocalCPtr<_4kPage>; MAX_PAGE_NUM] = [LocalCPtr::from_bits(0); MAX_PAGE_NUM];
+static mut FRAMES: [Cap<_4kPage>; MAX_PAGE_NUM] = [Cap::from_bits(0); MAX_PAGE_NUM];
 
 fn run_performance_test(is_sync: bool) {
     performance_test_init();
@@ -383,7 +383,7 @@ fn async_address_test(ptr: usize) {
     }
 }
 
-async fn async_memery_single_test(frame: LocalCPtr<_4kPage>, vaddr: usize) {
+async fn async_memery_single_test(frame: Cap<_4kPage>, vaddr: usize) {
     let vspace = sel4::init_thread::slot::VSPACE.cap();
     for i in 0..EPOCH {
         syscall_riscv_page_map(

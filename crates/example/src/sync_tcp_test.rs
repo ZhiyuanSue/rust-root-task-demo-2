@@ -1,14 +1,14 @@
 use core::cmp::min;
 use core::sync::atomic::AtomicUsize;
 use core::{mem::forget, usize};
-
+use core::ptr;
 use alloc::boxed::Box;
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;
 use alloc::{sync::Arc, vec};
 use sel4::cap_type::{IrqHandler, Tcb};
-use sel4::{with_ipc_buffer_mut, MessageInfo};
-use sel4::{cap_type::Endpoint, with_ipc_buffer, BootInfo, CPtr, IpcBuffer, LocalCPtr, r#yield, get_clock};
+use sel4::{with_ipc_buffer_mut, MessageInfo, init_thread};
+use sel4::{cap_type::Endpoint, with_ipc_buffer, BootInfo, CPtr, IpcBuffer, Cap, r#yield, get_clock};
 use sel4_root_task::{debug_print, debug_println};
 use smoltcp::iface::SocketHandle;
 use smoltcp::socket::tcp::{Socket, SocketBuffer};
@@ -20,11 +20,11 @@ use crate::{
     net::{
         sync_recv, sync_listen, sync_send, MessageType, TCP_RX_BUF_LEN, TCP_TX_BUF_LEN
     }, 
-    object_allocator::GLOBAL_OBJ_ALLOCATOR, init_thread
+    object_allocator::GLOBAL_OBJ_ALLOCATOR
 };
 
 struct RecvBlockedTask {
-    pub ep: LocalCPtr<Endpoint>,
+    pub ep: Cap<Endpoint>,
     pub tcp_buffer: &'static mut TcpBuffer,
     pub handler: SocketHandle,
     pub complete: bool,
@@ -36,7 +36,7 @@ lazy_static::lazy_static! {
 
 struct SyncArgs {
     ep: CPtr,
-    tcb: Option<LocalCPtr<Tcb>>,
+    tcb: Option<Cap<Tcb>>,
 }
 
 impl SyncArgs {
@@ -63,7 +63,7 @@ static THREAD_NUM: usize = 1 << THREDA_NUM_BITS;
 static mut COMPLETE_CNT: u8 = 0u8;
 
 #[inline]
-fn net_interrupt_handler(handler: LocalCPtr<IrqHandler>) {
+fn net_interrupt_handler(handler: Cap<IrqHandler>) {
     iface_poll(true);
     crate::device::interrupt_handler();
     handler.irq_handler_ack();
@@ -142,7 +142,7 @@ fn process_blocked_task(task: &mut RecvBlockedTask) {
     }
 }
 
-fn process_req(ep: LocalCPtr<Endpoint>) {
+fn process_req(ep: Cap<Endpoint>) {
     let msg_type = with_ipc_buffer(
         |ipc_buffer| {
             unsafe {
@@ -250,7 +250,7 @@ fn process_req(ep: LocalCPtr<Endpoint>) {
     }
 }
 
-fn create_c_s_ipc_channel(thread_num_bits: usize) -> Vec<LocalCPtr<Endpoint>> {
+fn create_c_s_ipc_channel(thread_num_bits: usize) -> Vec<Cap<Endpoint>> {
     let thread_num = 1 << thread_num_bits;
     let cnode = init_thread::slot::TCB.cap();
     let mut eps = GLOBAL_OBJ_ALLOCATOR.lock().alloc_many_ep(thread_num_bits);
@@ -291,10 +291,10 @@ fn create_c_s_ipc_channel(thread_num_bits: usize) -> Vec<LocalCPtr<Endpoint>> {
 
 fn tcp_server(args: usize, ipc_buffer_addr: usize) {
     let arg = SyncArgs::from_ptr(args);
-    let ep = LocalCPtr::<Endpoint>::from_cptr(arg.ep);
+    let ep = Cap::<Endpoint>::from_cptr(arg.ep);
     let ipc_buffer = ipc_buffer_addr as *mut sel4::sys::seL4_IPCBuffer;
     let ipcbuf = unsafe {
-        IpcBuffer::from_ptr(ipc_buffer)
+        &mut sel4::IpcBuffer(ipc_buffer)
     };
     sel4::set_ipc_buffer(ipcbuf);
     let thread = arg.tcb.unwrap();

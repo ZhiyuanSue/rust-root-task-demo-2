@@ -1,10 +1,10 @@
-use sel4::{cap_type::Endpoint, with_ipc_buffer, with_ipc_buffer_mut, LocalCPtr, MessageInfo};
+use sel4::{cap_type::Endpoint, with_ipc_buffer, with_ipc_buffer_mut, Cap, MessageInfo};
 use sel4_root_task::debug_println;
 use smoltcp::iface::SocketHandle;
 
 use super::{MessageType, TcpBuffer, NET_STACK_MAP, NET_STACK_MAP2};
 
-pub fn sync_listen(port: u16, ep: LocalCPtr<Endpoint>) -> Result<SocketHandle, ()> {
+pub fn sync_listen(port: u16, ep: Cap<Endpoint>) -> Result<SocketHandle, ()> {
     let msg = MessageInfo::new(0, 0, 0, 2);
 
     with_ipc_buffer_mut(
