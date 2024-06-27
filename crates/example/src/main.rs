@@ -64,28 +64,28 @@ fn expand_tls() {
         ptr as usize
     };
 
-    let ipc_buffer_ptr = with_ipc_buffer(|buffer| {
-        buffer.ptr() as *mut sel4::sys::seL4_IPCBuffer
-    });
+    // let ipc_buffer_ptr = with_ipc_buffer(|buffer| {
+    //     *(buffer.inner().clone())
+    // });
 
     unsafe {
         asm!("mv tp, {}", in(reg) vptr);
     }
 
-    let ipcbuf = unsafe {
-        IpcBuffer::from_ptr(ipc_buffer_ptr)
-    };
-    sel4::set_ipc_buffer(ipcbuf);
+    // let ipcbuf = unsafe {
+    //     IpcBuffer::new(ipc_buffer_ptr)
+    // };
+    // sel4::set_ipc_buffer(& mut ipcbuf);
 }
 
 #[root_task(stack_size = 4096 * 128)]
 fn main(bootinfo: &sel4::BootInfoPtr) -> sel4::Result<!> {
-    debug_println!("Hello, World!");
+    sel4::debug_println!("Hello, World!");
     LOGGER.set().unwrap();
-    heap::init_heap();
+    // heap::init_heap();
     expand_tls();
     let recv_tcb = sel4::init_thread::slot::TCB.cap();
-    recv_tcb.tcb_set_affinity(1);
+    // recv_tcb.tcb_set_affinity(1);
     image_utils::UserImageUtils.init(bootinfo);
     GLOBAL_OBJ_ALLOCATOR.lock().init(bootinfo);
     // async_ipc_test(bootinfo)?;

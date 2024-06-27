@@ -319,7 +319,7 @@ impl ObjectAllocator {
             debug_println!("write register: {:?}", user_context);
             tcb.tcb_write_all_registers(false, &mut user_context).unwrap();
 
-            tcb.tcb_set_affinity(affinity).unwrap();
+            // tcb.tcb_set_affinity(affinity).unwrap();
             if resume {
                 tcb.tcb_resume().unwrap();
             }
@@ -378,7 +378,7 @@ impl ObjectAllocator {
         // debug_println!("write register: {:?}", user_context);
         tcb.tcb_write_all_registers(false, &mut user_context)?;
 
-        tcb.tcb_set_affinity(affinity)?;
+        // tcb.tcb_set_affinity(affinity)?;
         if resume {
             tcb.tcb_resume()?;
         }
